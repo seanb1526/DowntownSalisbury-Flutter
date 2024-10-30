@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "752025450110",
+    "project_id": "downtown-salisbury-app",
+    "storage_bucket": "downtown-salisbury-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:752025450110:android:1368df7805564d98a1ca2f",
+        "android_client_info": {
+          "package_name": "com.example.downtown_salisbury"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoUGUj2coVVzrkEBsmSgNLE_Xo0AImmow"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
