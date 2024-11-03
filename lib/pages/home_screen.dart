@@ -103,11 +103,10 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       // Label below the button
-                      const SizedBox(height: 8),
                       Text(
                         buttons[index]['label'], // Button label
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
