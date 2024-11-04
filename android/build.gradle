@@ -1,3 +1,14 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.4' // Ensure the version is appropriate for your project
+        classpath 'com.google.gms:google-services:4.3.10' // Google services dependency
+    }
+}
+
 allprojects {
     repositories {
         google()
@@ -17,6 +28,4 @@ tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
 
-dependencies {
-    classpath 'com.google.gms:google-services:4.3.10' // Latest version
-}
+
