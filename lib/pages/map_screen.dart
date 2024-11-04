@@ -33,7 +33,6 @@ class _MapScreenState extends State<MapScreen> {
     } else if (status.isPermanentlyDenied) {
       print(
           "Location permission permanently denied. Please enable it in settings.");
-      openAppSettings();
     }
   }
 
