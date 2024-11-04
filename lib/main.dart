@@ -4,6 +4,7 @@ import 'pages/map_screen.dart';
 import 'pages/events_screen.dart';
 import 'pages/more_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -12,6 +13,10 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Request permission for notifications (only needed for iOS)
+  FirebaseMessaging.instance.requestPermission();
+
   runApp(const MyApp());
 }
 
@@ -46,6 +51,34 @@ class _MainScreenState extends State<MainScreen> {
     EventsScreen(),
     MoreScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Handle push notifications when the app is in the foreground
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print(
+          'Received message while app is open: ${message.notification?.title}');
+      // You could display an in-app notification or show a dialog here
+    });
+
+    // Handle push notifications when the app is opened from a notification
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print('User tapped on notification: ${message.notification?.title}');
+      // Navigate to a specific screen or perform other actions based on the notification data
+    });
+
+    // Optional: Handle any initial message if the app was launched from a notification
+    FirebaseMessaging.instance
+        .getInitialMessage()
+        .then((RemoteMessage? message) {
+      if (message != null) {
+        print('App launched from notification: ${message.notification?.title}');
+        // Navigate to a specific screen if needed
+      }
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
