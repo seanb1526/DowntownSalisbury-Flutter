@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'pages/home_screen.dart';
 import 'pages/map_screen.dart';
 import 'pages/events_screen.dart';
-import 'pages/more_screen.dart';
+import 'pages/beacon_home_screen.dart';
+import 'pages/rewards_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
@@ -49,7 +50,8 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     MapScreen(),
     EventsScreen(),
-    MoreScreen(),
+    BeaconHomeScreen(),
+    RewardsScreen()
   ];
 
   @override
@@ -106,7 +108,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.local_activity),
-            label: '3rd Friday',
+            label: 'Beacons',
           ),
         ],
         currentIndex: _selectedIndex,
