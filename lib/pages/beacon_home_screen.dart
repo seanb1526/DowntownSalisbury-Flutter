@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Import the flutter_svg package
 import 'rewards_screen.dart';
 import '../widgets/store_item.dart';
 
@@ -32,7 +33,11 @@ class BeaconHomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            Icon(Icons.camera_alt, size: 24),
+            SvgPicture.asset(
+              'assets/images/navpro.svg', // Path to your SVG asset
+              height: 24, // Set the height you want
+              width: 24, // Set the width you want
+            ),
             SizedBox(width: 8),
             Text('Downtown Game'),
           ],
@@ -55,7 +60,6 @@ class BeaconHomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
-              // Center the title
               child: Text(
                 'Participating Stores',
                 style: Theme.of(context).textTheme.headlineSmall,
@@ -64,23 +68,19 @@ class BeaconHomeScreen extends StatelessWidget {
             SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
-                itemCount:
-                    storeNames.length, // Use the length of the store names list
+                itemCount: storeNames.length,
                 itemBuilder: (context, index) {
-                  // Alternate colors from the storeItemColors list
                   Color itemColor =
                       storeItemColors[index % storeItemColors.length];
 
                   return StoreItem(
                     icon: Icons.map_outlined,
-                    name: storeNames[index], // Use the store name from the list
-                    distance: (index % 2 == 0)
-                        ? 'available'
-                        : 'unavailable', // Example distance
+                    name: storeNames[index],
+                    distance: (index % 2 == 0) ? 'available' : 'unavailable',
                     onCheckIn: () {
                       // Add your check-in logic here
                     },
-                    color: itemColor, // Pass the color
+                    color: itemColor,
                   );
                 },
               ),
@@ -92,9 +92,7 @@ class BeaconHomeScreen extends StatelessWidget {
                 Row(
                   children: [
                     Icon(Icons.monetization_on,
-                        size: 24,
-                        color:
-                            Colors.amber[600]), // Change to a gold/yellow color
+                        size: 24, color: Colors.amber[600]),
                     SizedBox(width: 8),
                     Text('1250 Coins'),
                   ],
