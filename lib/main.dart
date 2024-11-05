@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart'; // Make sure to have your Firebase options
+
+// Import your pages
 import 'pages/home_screen.dart';
+import 'pages/login_screen.dart';
+import 'pages/signup_screen.dart';
 import 'pages/map_screen.dart';
 import 'pages/events_screen.dart';
 import 'pages/beacon_home_screen.dart';
 import 'pages/rewards_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'firebase_options.dart';
+import 'firebase_auth.dart'; // Import your Firebase Auth Service
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // Request permission for notifications (only needed for iOS)
-  FirebaseMessaging.instance.requestPermission();
 
   runApp(const MyApp());
 }
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Tab Navigation App',
+      title: 'Flutter Navigation App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -37,52 +37,50 @@ class MyApp extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int initialIndex; // Added to accept the starting index
+
+  const MainScreen({super.key, this.initialIndex = 0}); // Default to 0
 
   @override
   _MainScreenState createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  late int
+      _selectedIndex; // Use 'late' to indicate it will be initialized later
 
   final List<Widget> _pages = [
     HomeScreen(),
     MapScreen(),
     EventsScreen(),
-    BeaconHomeScreen(),
-    RewardsScreen()
+    BeaconHomeScreen(), // This will be accessed after login
   ];
+
+  // Check if the user is logged in using FirebaseAuth
+  Future<bool> _isUserLoggedIn() async {
+    return await FirebaseAuthService().isLoggedIn();
+  }
 
   @override
   void initState() {
     super.initState();
-
-    // Handle push notifications when the app is in the foreground
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print(
-          'Received message while app is open: ${message.notification?.title}');
-      // You could display an in-app notification or show a dialog here
-    });
-
-    // Handle push notifications when the app is opened from a notification
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      print('User tapped on notification: ${message.notification?.title}');
-      // Navigate to a specific screen or perform other actions based on the notification data
-    });
-
-    // Optional: Handle any initial message if the app was launched from a notification
-    FirebaseMessaging.instance
-        .getInitialMessage()
-        .then((RemoteMessage? message) {
-      if (message != null) {
-        print('App launched from notification: ${message.notification?.title}');
-        // Navigate to a specific screen if needed
-      }
-    });
+    _selectedIndex = widget.initialIndex; // Set the selected index
   }
 
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index) async {
+    if (index == 3) {
+      // Beacon Home
+      bool loggedIn = await _isUserLoggedIn();
+      if (!loggedIn) {
+        // If not logged in, navigate to LoginScreen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+        );
+        return;
+      }
+    }
+
     setState(() {
       _selectedIndex = index;
     });
@@ -94,22 +92,11 @@ class _MainScreenState extends State<MainScreen> {
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+          BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Map',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event),
-            label: 'Events',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.local_activity),
-            label: 'Beacons',
-          ),
+              icon: Icon(Icons.local_activity), label: 'Beacons'),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

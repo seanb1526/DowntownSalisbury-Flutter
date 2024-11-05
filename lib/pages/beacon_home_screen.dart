@@ -1,13 +1,17 @@
+import 'package:downtown_salisbury/pages/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Import the flutter_svg package
 import 'rewards_screen.dart';
 import '../widgets/store_item.dart';
+import '../firebase_auth.dart'; // Import your Firebase Auth Service
 
 class BeaconHomeScreen extends StatelessWidget {
   const BeaconHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final FirebaseAuthService _authService = FirebaseAuthService();
+
     // List of store names
     final List<String> storeNames = [
       'Two Scoops Ice Cream & Waffles',
@@ -42,14 +46,22 @@ class BeaconHomeScreen extends StatelessWidget {
             Text('Downtown Game'),
           ],
         ),
+        automaticallyImplyLeading: false, // This will hide the back arrow
         actions: [
           IconButton(
-            icon: Icon(Icons.wallet, size: 24),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => RewardsScreen()),
-              );
+            icon: Icon(Icons.logout, size: 24),
+            onPressed: () async {
+              // Log out the user and print debug info
+              await _authService.logOut();
+
+              // Verify the user is logged out
+              bool loggedIn = await _authService.isLoggedIn();
+              print(
+                  "Is user logged in after logout? $loggedIn"); // Should print false
+
+              // Navigate back to the MainScreen (with BottomNav)
+              Navigator.pushReplacementNamed(
+                  context, '/'); // Using the '/' for main screen with BottomNav
             },
           ),
         ],
