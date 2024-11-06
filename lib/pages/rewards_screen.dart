@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/reward_item.dart';
+import '../widgets/reward_item.dart'; // Ensure this widget exists in your project
 import '../helpers/sqflite_helper.dart'; // Import your DatabaseHelper
 import '../firebase_auth.dart'; // Import FirebaseAuthService
 
@@ -36,20 +36,18 @@ class _RewardsScreenState extends State<RewardsScreen> {
   Future<void> _redeemReward(String userId, int rewardCost) async {
     if (_coinBalance >= rewardCost) {
       final newBalance = _coinBalance - rewardCost;
-      // Update the balance in the database
       await DatabaseHelper().updateCurrency(userId, newBalance);
       setState(() {
         _coinBalance = newBalance;
       });
-      // Show a success message or perform some action
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Reward redeemed! New balance: $_coinBalance Coins'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Reward redeemed! New balance: $_coinBalance Coins')),
+      );
     } else {
-      // Show an error message if the user doesn't have enough coins
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Not enough coins!'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Not enough coins!')),
+      );
     }
   }
 
@@ -63,6 +61,13 @@ class _RewardsScreenState extends State<RewardsScreen> {
             SizedBox(width: 8),
             Text('Rewards Shop'),
           ],
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(
+                context, _coinBalance); // Return the updated coin balance
+          },
         ),
       ),
       body: Padding(

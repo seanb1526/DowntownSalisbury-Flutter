@@ -156,11 +156,21 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                   ],
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    // Navigate to RewardsScreen and wait for result
+                    final updatedBalance = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => RewardsScreen()),
                     );
+
+                    // Check if the updated balance is not null and refresh the coin balance
+                    if (updatedBalance != null &&
+                        updatedBalance != _coinBalance) {
+                      setState(() {
+                        _coinBalance =
+                            updatedBalance; // Update coin balance if it's changed
+                      });
+                    }
                   },
                   child: Text('Spend Coins'),
                 ),
