@@ -149,7 +149,10 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                     Icon(Icons.monetization_on,
                         size: 24, color: Colors.amber[600]),
                     SizedBox(width: 8),
-                    Text('$_coinBalance Coins'), // Display user's balance
+                    Text(
+                      '$_coinBalance Coins',
+                      style: TextStyle(fontSize: 18),
+                    ), // Display user's balance
                   ],
                 ),
                 ElevatedButton(
