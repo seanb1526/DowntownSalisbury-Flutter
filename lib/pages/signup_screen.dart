@@ -3,6 +3,7 @@ import '../firebase_auth.dart'; // Import your Firebase Auth Service
 import 'login_screen.dart'; // Import your LoginScreen
 import 'beacon_home_screen.dart'; // Import your BeaconHomeScreen
 import 'package:downtown_salisbury/main.dart';
+import '../helpers/sqflite_helper.dart'; // Import your Database Helper file
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -20,8 +21,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _passwordController.text,
     );
     if (user != null) {
-      // Automatically log in the user and navigate to BeaconHomeScreen
+      // Once sign-up is successful, get the Firebase UID
+      String userId = user.uid;
+
+      // Initialize the SQLite database and store initial data (e.g., 0 currency)
+      await DatabaseHelper().updateCurrency(userId,
+          0); // You could set the initial balance to 0 or any starting value
+
       print("Sign up successful: ${user.email}");
+
+      // Navigate to BeaconHomeScreen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => BeaconHomeScreen()),

@@ -3,9 +3,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  // Check if the user is logged in
   Future<bool> isLoggedIn() async {
     User? user = _auth.currentUser;
     return user != null;
+  }
+
+  // Get current logged-in user
+  User? getCurrentUser() {
+    return _auth.currentUser;
   }
 
   // Sign Up

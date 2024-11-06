@@ -1,17 +1,59 @@
-import 'package:downtown_salisbury/pages/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart'; // Import the flutter_svg package
 import 'rewards_screen.dart';
 import '../widgets/store_item.dart';
 import '../firebase_auth.dart'; // Import your Firebase Auth Service
+import '../helpers/sqflite_helper.dart'; // Import your DatabaseHelper
 
-class BeaconHomeScreen extends StatelessWidget {
+class BeaconHomeScreen extends StatefulWidget {
   const BeaconHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final FirebaseAuthService _authService = FirebaseAuthService();
+  _BeaconHomeScreenState createState() => _BeaconHomeScreenState();
+}
 
+class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
+  final FirebaseAuthService _authService = FirebaseAuthService();
+  int _coinBalance = 0; // Store user's coin balance
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCoinBalance();
+  }
+
+  // Fetch the user's coin balance from the database
+  Future<void> _fetchCoinBalance() async {
+    final user = await _authService.getCurrentUser(); // Get the current user
+    if (user != null) {
+      final userId = user.uid; // Get the Firebase user ID
+      final balance = await DatabaseHelper().getCurrency(userId);
+      setState(() {
+        _coinBalance = balance ?? 0; // Set balance or default to 0 if not found
+      });
+    }
+  }
+
+  // Update the user's coin balance when they check in
+  Future<void> _addCoins(int coinsToAdd) async {
+    final user = await _authService.getCurrentUser(); // Get the current user
+    if (user != null) {
+      final userId = user.uid; // Get the Firebase user ID
+      final currentBalance = await DatabaseHelper().getCurrency(userId) ?? 0;
+      final newBalance = currentBalance + coinsToAdd;
+
+      // Update the coin balance in the database
+      await DatabaseHelper().updateCurrency(userId, newBalance);
+
+      // Update the UI with the new balance
+      setState(() {
+        _coinBalance = newBalance;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // List of store names
     final List<String> storeNames = [
       'Two Scoops Ice Cream & Waffles',
@@ -90,7 +132,8 @@ class BeaconHomeScreen extends StatelessWidget {
                     name: storeNames[index],
                     distance: (index % 2 == 0) ? 'available' : 'unavailable',
                     onCheckIn: () {
-                      // Add your check-in logic here
+                      // Add 10 coins to the balance when checking in
+                      _addCoins(10);
                     },
                     color: itemColor,
                   );
@@ -106,7 +149,7 @@ class BeaconHomeScreen extends StatelessWidget {
                     Icon(Icons.monetization_on,
                         size: 24, color: Colors.amber[600]),
                     SizedBox(width: 8),
-                    Text('1250 Coins'),
+                    Text('$_coinBalance Coins'), // Display user's balance
                   ],
                 ),
                 ElevatedButton(
