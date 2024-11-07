@@ -130,12 +130,13 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                   return StoreItem(
                     icon: Icons.map_outlined,
                     name: storeNames[index],
-                    distance: (index % 2 == 0) ? 'available' : 'unavailable',
+                    isAvailable: (index % 2 == 0) ? 'available' : 'unavailable',
                     onCheckIn: () {
                       // Add 10 coins to the balance when checking in
                       _addCoins(10);
                     },
                     color: itemColor,
+                    beaconID: 'beaconId_goes_here',
                   );
                 },
               ),

@@ -3,16 +3,18 @@ import 'package:flutter/material.dart';
 class StoreItem extends StatelessWidget {
   final IconData icon;
   final String name;
-  final String distance;
+  final String isAvailable;
   final VoidCallback onCheckIn;
   final Color color; // Add this line
+  final String beaconID;
 
   StoreItem({
     required this.icon,
     required this.name,
-    required this.distance,
+    required this.isAvailable,
     required this.onCheckIn,
     required this.color, // Update this line
+    required this.beaconID,
   });
 
   @override
@@ -37,7 +39,7 @@ class StoreItem extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  distance,
+                  isAvailable,
                   style: TextStyle(color: Colors.grey),
                 ),
               ],
