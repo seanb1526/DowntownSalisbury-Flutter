@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart'; // Make sure to have your Firebase options
-import 'package:flutter/services.dart'; // For loading assets
-import 'package:downtown_salisbury/helpers/sqflite_helper.dart'; // Your database helper
-import 'dart:convert'; // For decoding JSON
+
+// Import your pages
 import 'pages/home_screen.dart';
 import 'pages/login_screen.dart';
+import 'pages/signup_screen.dart';
 import 'pages/map_screen.dart';
 import 'pages/events_screen.dart';
 import 'pages/beacon_home_screen.dart';
+import 'pages/rewards_screen.dart';
 import 'firebase_auth.dart'; // Import your Firebase Auth Service
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -30,44 +31,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: FutureBuilder(
-        future: initializeStores(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const Center(child: Text('Error loading stores'));
-          } else {
-            return const MainScreen();
-          }
-        },
-      ),
+      home: MainScreen(),
     );
-  }
-}
-
-Future<void> initializeStores() async {
-  try {
-    print('Attempting to load stores.json...');
-    final jsonString = await rootBundle.loadString('assets/stores.json');
-    final List<dynamic> storeList = json.decode(jsonString);
-    print('Loaded ${storeList.length} stores from JSON.');
-
-    final db = DatabaseHelper();
-    final storesInDb = await db.getAllStores();
-    print('There are ${storesInDb.length} stores in the DB.');
-
-    if (storesInDb.isEmpty) {
-      print('No stores in DB. Inserting stores...');
-      for (var store in storeList) {
-        await db.insertStore(
-            store['name'], store['beaconId'] // isAvailable defaults to true
-            );
-      }
-      print('Stores inserted successfully.');
-    }
-  } catch (e) {
-    print('Error initializing stores: $e');
   }
 }
 
