@@ -6,11 +6,9 @@ import 'package:downtown_salisbury/helpers/sqflite_helper.dart'; // Your databas
 import 'dart:convert'; // For decoding JSON
 import 'pages/home_screen.dart';
 import 'pages/login_screen.dart';
-import 'pages/signup_screen.dart';
 import 'pages/map_screen.dart';
 import 'pages/events_screen.dart';
 import 'pages/beacon_home_screen.dart';
-import 'pages/rewards_screen.dart';
 import 'firebase_auth.dart'; // Import your Firebase Auth Service
 
 void main() async {

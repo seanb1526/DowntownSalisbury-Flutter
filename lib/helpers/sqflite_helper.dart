@@ -20,7 +20,7 @@ class DatabaseHelper {
     return await openDatabase(
       path,
       version:
-          2, // Increment version to force table creation for the `stores` table
+          1, // Increment version to force table creation for the `stores` table
       onCreate: (db, version) async {
         // Create the user_currency table
         await db.execute(

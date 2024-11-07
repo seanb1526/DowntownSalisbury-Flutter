@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../firebase_auth.dart'; // Import your Firebase Auth Service
 import 'signup_screen.dart';
-import 'beacon_home_screen.dart'; // Import your BeaconHomeScreen
 import 'package:downtown_salisbury/main.dart'; // Import your MainScreen
 import '../helpers/sqflite_helper.dart'; // Import your DatabaseHelper
 
