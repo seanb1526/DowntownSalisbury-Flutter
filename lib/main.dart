@@ -13,34 +13,13 @@ import 'pages/beacon_home_screen.dart';
 import 'pages/rewards_screen.dart';
 import 'firebase_auth.dart'; // Import your Firebase Auth Service
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize the database and load the stores if needed
-  await initializeStores();
-
   runApp(const MyApp());
-}
-
-Future<void> initializeStores() async {
-  // Fetch the local stores from the JSON file
-  final jsonString = await rootBundle.loadString('assets/stores.json');
-  final List<dynamic> storeList = json.decode(jsonString);
-
-  // If the stores table is empty, insert the stores data
-  final db = DatabaseHelper();
-  final storesInDb = await db.getAllStores();
-
-  if (storesInDb.isEmpty) {
-    for (var store in storeList) {
-      await db.insertStore(
-          store['name'], store['beaconId'] // isAvailable defaults to true
-          );
-    }
-  }
 }
 
 class MyApp extends StatelessWidget {
@@ -53,8 +32,44 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MainScreen(),
+      home: FutureBuilder(
+        future: initializeStores(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return const Center(child: Text('Error loading stores'));
+          } else {
+            return const MainScreen();
+          }
+        },
+      ),
     );
+  }
+}
+
+Future<void> initializeStores() async {
+  try {
+    print('Attempting to load stores.json...');
+    final jsonString = await rootBundle.loadString('assets/stores.json');
+    final List<dynamic> storeList = json.decode(jsonString);
+    print('Loaded ${storeList.length} stores from JSON.');
+
+    final db = DatabaseHelper();
+    final storesInDb = await db.getAllStores();
+    print('There are ${storesInDb.length} stores in the DB.');
+
+    if (storesInDb.isEmpty) {
+      print('No stores in DB. Inserting stores...');
+      for (var store in storeList) {
+        await db.insertStore(
+            store['name'], store['beaconId'] // isAvailable defaults to true
+            );
+      }
+      print('Stores inserted successfully.');
+    }
+  } catch (e) {
+    print('Error initializing stores: $e');
   }
 }
 
