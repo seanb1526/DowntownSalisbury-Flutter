@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart'; // Make sure to have your Firebase options
-
-// Import your pages
+import 'package:flutter/services.dart'; // For loading assets
+import 'package:downtown_salisbury/helpers/sqflite_helper.dart'; // Your database helper
+import 'dart:convert'; // For decoding JSON
 import 'pages/home_screen.dart';
 import 'pages/login_screen.dart';
 import 'pages/signup_screen.dart';
@@ -18,7 +19,28 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Initialize the database and load the stores if needed
+  await initializeStores();
+
   runApp(const MyApp());
+}
+
+Future<void> initializeStores() async {
+  // Fetch the local stores from the JSON file
+  final jsonString = await rootBundle.loadString('assets/stores.json');
+  final List<dynamic> storeList = json.decode(jsonString);
+
+  // If the stores table is empty, insert the stores data
+  final db = DatabaseHelper();
+  final storesInDb = await db.getAllStores();
+
+  if (storesInDb.isEmpty) {
+    for (var store in storeList) {
+      await db.insertStore(
+          store['name'], store['beaconId'] // isAvailable defaults to true
+          );
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
