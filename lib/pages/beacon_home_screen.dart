@@ -65,6 +65,17 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
       'Store 7',
     ];
 
+    // List of DeviceNames for the beacons
+    final List<String> beaconNames = [
+      'IndoorNavPRO',
+      'IndoorNavPRO 2',
+      'IndoorNavPRO 3',
+      'IndoorNavPRO 4',
+      'IndoorNavPRO 5',
+      'IndoorNavPRO 6',
+      'IndoorNavPRO 7',
+    ];
+
     // List of colors for StoreItem
     final List<Color> storeItemColors = [
       Colors.green[100]!,
@@ -136,7 +147,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                       _addCoins(10);
                     },
                     color: itemColor,
-                    beaconID: 'beaconId_goes_here',
+                    beaconID: beaconNames[index],
                   );
                 },
               ),
