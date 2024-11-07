@@ -15,11 +15,23 @@ class BeaconHomeScreen extends StatefulWidget {
 class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
   final FirebaseAuthService _authService = FirebaseAuthService();
   int _coinBalance = 0; // Store user's coin balance
+  List<Map<String, dynamic>> _stores = []; // List to hold store data from DB
+
+  // List of colors for StoreItem (similar to what you had earlier)
+  final List<Color> storeItemColors = [
+    Colors.green[100]!,
+    Colors.red[100]!,
+    Colors.blue[100]!,
+    Colors.yellow[100]!,
+    Colors.purple[100]!,
+    Colors.orange[100]!,
+  ];
 
   @override
   void initState() {
     super.initState();
     _fetchCoinBalance();
+    _fetchStores(); // Fetch stores from the database
   }
 
   // Fetch the user's coin balance from the database
@@ -32,6 +44,16 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
         _coinBalance = balance ?? 0; // Set balance or default to 0 if not found
       });
     }
+  }
+
+  // Fetch stores from the database
+  Future<void> _fetchStores() async {
+    final stores = await DatabaseHelper().getAllStores(); // Get stores from DB
+    print("Fetched stores: $stores"); // Debug the stores list
+
+    setState(() {
+      _stores = stores;
+    });
   }
 
   // Update the user's coin balance when they check in
@@ -54,27 +76,6 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // List of store names
-    final List<String> storeNames = [
-      'Two Scoops Ice Cream & Waffles',
-      'Delmarva Home Grown',
-      'Blackwater Apothecary',
-      'Breathe Interiors',
-      'Store 5',
-      'Store 6',
-      'Store 7',
-    ];
-
-    // List of colors for StoreItem
-    final List<Color> storeItemColors = [
-      Colors.green[100]!,
-      Colors.red[100]!,
-      Colors.blue[100]!,
-      Colors.yellow[100]!,
-      Colors.purple[100]!,
-      Colors.orange[100]!,
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -122,21 +123,25 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
             SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
-                itemCount: storeNames.length,
+                itemCount: _stores.length,
                 itemBuilder: (context, index) {
-                  Color itemColor =
+                  final store = _stores[index];
+                  final itemColor =
                       storeItemColors[index % storeItemColors.length];
 
                   return StoreItem(
                     icon: Icons.map_outlined,
-                    name: storeNames[index],
-                    isAvailable: (index % 2 == 0) ? 'available' : 'unavailable',
+                    name: store['store_name'], // Corrected to use 'store_name'
+                    isAvailable: store['is_available'] == 1
+                        ? 'available'
+                        : 'unavailable',
                     onCheckIn: () {
                       // Add 10 coins to the balance when checking in
                       _addCoins(10);
                     },
                     color: itemColor,
-                    beaconID: 'beaconId_goes_here',
+                    beaconID:
+                        store['beacon_id'], // Corrected to use 'beacon_id'
                   );
                 },
               ),
