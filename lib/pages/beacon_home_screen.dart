@@ -198,12 +198,12 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     // List of DeviceNames for the beacons
     final List<String> beaconNames = [
       '9FCE50BD-9F68-6245-EC2D-37946CD12A1B',
-      '7369744756d736974756d736974756d15',
+      'B77DB3A4-2EBA-EA22-5066-D87D0A5E1526',
       'D5:A4:AE:5C:DC:75',
-      'IndoorNavPRO 2s',
-      '736974475-6d73-6974-756d-736974756d15',
-      'IndoorNavPRO 6',
-      'IndoorNavPRO 7',
+      'FC:DB:AC:C2:5F:DB',
+      'nothingHere',
+      'nothingHere2',
+      'nothingHere3',
     ];
 
     // List of colors for StoreItem
