@@ -7,6 +7,8 @@ import '../helpers/sqflite_helper.dart'; // Import your DatabaseHelper
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:io' show Platform; // For Platform checks
+import 'package:location/location.dart'; // For Location services
 
 final flutterReactiveBle = FlutterReactiveBle();
 
@@ -25,7 +27,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
   void initState() {
     super.initState();
     _fetchCoinBalance();
-    requestLocationPermission();
+    requestPermissions();
   }
 
   // Fetch the user's coin balance from the database
@@ -58,59 +60,126 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     }
   }
 
-  Future<void> requestLocationPermission() async {
-    // Request the location permission
-    var status = await Permission.locationWhenInUse.request();
+  Future<void> requestPermissions() async {
+    // Location permission (which you already have)
+    await Permission.locationWhenInUse.request();
 
-    // Check if the permission is granted
-    if (status.isGranted) {
-      print("Location permission granted.");
-    } else {
-      print("Location permission not granted.");
+    // For Android 12+
+    if (Platform.isAndroid) {
+      await Permission.bluetoothScan.request();
+      await Permission.bluetoothConnect.request();
+      // Also check if location services are enabled
+      bool serviceEnabled = await Location().serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await Location().requestService();
+        if (!serviceEnabled) {
+          print("Location services not enabled");
+          return;
+        }
+      }
     }
   }
 
-  Future<void> scanForBeacon(String beaconId) async {
-    // Request location permission before proceeding
-    await requestLocationPermission();
+  Future<void> scanForBeacon(String targetBeaconId) async {
+    await requestPermissions();
 
-    // Check if location permission is granted
-    if (await Permission.locationWhenInUse.isGranted) {
-      print("Starting BLE scan for beacon with UUID: $beaconId");
+    if (await Permission.locationWhenInUse.isGranted &&
+        (Platform.isIOS || await Permission.bluetoothScan.isGranted)) {
+      print("\nStarting BLE scan for beacon: $targetBeaconId");
 
-      // Ensure no other scan is running by cancelling previous scan subscription
       StreamSubscription<DiscoveredDevice>? scanSubscription;
 
-      // Start scanning for devices
       scanSubscription = flutterReactiveBle.scanForDevices(
-        withServices: [], // We don't filter by service here, we want all devices
+        withServices: [],
+        scanMode: ScanMode.lowLatency,
       ).listen(
         (device) {
-          print("Found device: ${device.id}, name: ${device.name}");
+          // First check if it's an iBKS beacon by manufacturer ID
+          if (device.manufacturerData.length >= 2) {
+            int manufacturerId =
+                (device.manufacturerData[1] << 8) | device.manufacturerData[0];
+            print(
+                "\nDevice Found - Manufacturer ID: 0x${manufacturerId.toRadixString(16)}");
+            print("MAC Address: ${device.id}");
 
-          // Check if this is the beacon we are looking for
-          if (device.id == beaconId) {
-            // Beacon with the desired UUID found
-            print("Beacon found with UUID: $beaconId");
+            // For iBKS beacons specifically
+            if (device.manufacturerData.length >= 23) {
+              // Extract the iBeacon prefix (should be 0x0215 for iBeacon)
+              int iBeaconPrefix = (device.manufacturerData[3] << 8) |
+                  device.manufacturerData[2];
+              print("iBeacon Prefix: 0x${iBeaconPrefix.toRadixString(16)}");
 
-            // Stop scanning for beacons
-            scanSubscription?.cancel();
+              // Extract UUID - for iBeacon format
+              List<int> uuidBytes = device.manufacturerData.sublist(4, 20);
+              String uuid = uuidBytes
+                  .map((b) => b.toRadixString(16).padLeft(2, '0'))
+                  .join('');
+
+              // Format UUID with dashes
+              String formattedUuid = uuid
+                  .replaceAllMapped(
+                      RegExp(r'^(.{8})(.{4})(.{4})(.{4})(.{12})$'),
+                      (m) => '${m[1]}-${m[2]}-${m[3]}-${m[4]}-${m[5]}')
+                  .toUpperCase();
+
+              print("UUID: $formattedUuid");
+
+              // Extract Major and Minor values
+              int major = (device.manufacturerData[20] << 8) |
+                  device.manufacturerData[21];
+              int minor = (device.manufacturerData[22] << 8) |
+                  device.manufacturerData[23];
+              print("Major: $major, Minor: $minor");
+
+              // Check if this matches our target (either by UUID or MAC)
+              if (formattedUuid == targetBeaconId.toUpperCase() ||
+                  device.id.toUpperCase() == targetBeaconId.toUpperCase()) {
+                print("✓ MATCH FOUND!");
+                scanSubscription?.cancel();
+                return;
+              }
+            }
+
+            // For Eddystone format
+            if (device.serviceData.containsKey('feaa')) {
+              print("Eddystone Frame Found:");
+              List<int> eddystoneData = device.serviceData['feaa']!;
+              print(
+                  "Eddystone Data: ${eddystoneData.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':')}");
+
+              if (device.id.toUpperCase() == targetBeaconId.toUpperCase()) {
+                print("✓ EDDYSTONE MATCH FOUND!");
+                scanSubscription?.cancel();
+                return;
+              }
+            }
           }
         },
         onError: (error) {
           print("Error scanning for beacons: $error");
-
-          // Cancel the scan on error as well
           scanSubscription?.cancel();
         },
-        onDone: () {
-          print("Scan finished.");
-        },
       );
-    } else {
-      // If location permission is not granted, print a message
-      print("Location permission not granted, scan cannot proceed.");
     }
+  }
+
+// Helper function to parse manufacturer data (simplified example)
+  String? parseManufacturerData(List<int> data) {
+    if (data.length < 2) return null;
+
+    // Check if it's Apple's company identifier (0x004C)
+    if (data[0] == 0x4C && data[1] == 0x00) {
+      // Parse the UUID from the manufacturer data
+      // This is a simplified example - you'll need to implement the actual parsing
+      // based on your beacon's format
+    }
+    return null;
+  }
+
+// Helper function to parse Eddystone data
+  String? parseEddystoneData(List<int> data) {
+    // Implement Eddystone parsing based on your beacon's format
+    return null;
   }
 
   @override
