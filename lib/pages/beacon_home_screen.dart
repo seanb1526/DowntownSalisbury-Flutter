@@ -4,6 +4,11 @@ import 'rewards_screen.dart';
 import '../widgets/store_item.dart';
 import '../firebase_auth.dart'; // Import your Firebase Auth Service
 import '../helpers/sqflite_helper.dart'; // Import your DatabaseHelper
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'dart:async';
+import 'package:permission_handler/permission_handler.dart';
+
+final flutterReactiveBle = FlutterReactiveBle();
 
 class BeaconHomeScreen extends StatefulWidget {
   const BeaconHomeScreen({super.key});
@@ -52,6 +57,35 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     }
   }
 
+  Future<void> scanForBeacon(String beaconId) async {
+    // Check if location permission is granted
+    if (await Permission.locationWhenInUse.request().isGranted) {
+      // If permission is granted, proceed with the scan
+      StreamSubscription<DiscoveredDevice>? scanSubscription;
+
+      scanSubscription =
+          flutterReactiveBle.scanForDevices(withServices: []).listen(
+        (device) {
+          if (device.id == beaconId) {
+            // Device is in range; handle successful check-in
+            print("Beacon found with ID: $beaconId");
+
+            // Cancel the scan to stop searching for beacons
+            scanSubscription?.cancel();
+          }
+        },
+        onError: (error) {
+          print("Error scanning for beacons: $error");
+          // Cancel on error as well
+          scanSubscription?.cancel();
+        },
+      );
+    } else {
+      // If location permission is not granted, print a message
+      print("Location permission not granted.");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // List of store names
@@ -67,7 +101,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
 
     // List of DeviceNames for the beacons
     final List<String> beaconNames = [
-      'IndoorNavPRO',
+      'D5:A4:AE:5C:DC:75',
       'IndoorNavPRO 2',
       'IndoorNavPRO 3',
       'IndoorNavPRO 4',
@@ -142,8 +176,11 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                     icon: Icons.map_outlined,
                     name: storeNames[index],
                     isAvailable: (index % 2 == 0) ? 'available' : 'unavailable',
-                    onCheckIn: () {
-                      // Add 10 coins to the balance when checking in
+                    onCheckIn: () async {
+                      // Attempt to scan for the beacon when checking in
+                      await scanForBeacon(beaconNames[index]);
+
+                      // If the beacon is found, add 10 coins
                       _addCoins(10);
                     },
                     color: itemColor,
