@@ -25,6 +25,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
   void initState() {
     super.initState();
     _fetchCoinBalance();
+    requestLocationPermission();
   }
 
   // Fetch the user's coin balance from the database
@@ -57,32 +58,58 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     }
   }
 
+  Future<void> requestLocationPermission() async {
+    // Request the location permission
+    var status = await Permission.locationWhenInUse.request();
+
+    // Check if the permission is granted
+    if (status.isGranted) {
+      print("Location permission granted.");
+    } else {
+      print("Location permission not granted.");
+    }
+  }
+
   Future<void> scanForBeacon(String beaconId) async {
+    // Request location permission before proceeding
+    await requestLocationPermission();
+
     // Check if location permission is granted
-    if (await Permission.locationWhenInUse.request().isGranted) {
-      // If permission is granted, proceed with the scan
+    if (await Permission.locationWhenInUse.isGranted) {
+      print("Starting BLE scan for beacon with UUID: $beaconId");
+
+      // Ensure no other scan is running by cancelling previous scan subscription
       StreamSubscription<DiscoveredDevice>? scanSubscription;
 
-      scanSubscription =
-          flutterReactiveBle.scanForDevices(withServices: []).listen(
+      // Start scanning for devices
+      scanSubscription = flutterReactiveBle.scanForDevices(
+        withServices: [], // We don't filter by service here, we want all devices
+      ).listen(
         (device) {
-          if (device.id == beaconId) {
-            // Device is in range; handle successful check-in
-            print("Beacon found with ID: $beaconId");
+          print("Found device: ${device.id}, name: ${device.name}");
 
-            // Cancel the scan to stop searching for beacons
+          // Check if this is the beacon we are looking for
+          if (device.id == beaconId) {
+            // Beacon with the desired UUID found
+            print("Beacon found with UUID: $beaconId");
+
+            // Stop scanning for beacons
             scanSubscription?.cancel();
           }
         },
         onError: (error) {
           print("Error scanning for beacons: $error");
-          // Cancel on error as well
+
+          // Cancel the scan on error as well
           scanSubscription?.cancel();
+        },
+        onDone: () {
+          print("Scan finished.");
         },
       );
     } else {
       // If location permission is not granted, print a message
-      print("Location permission not granted.");
+      print("Location permission not granted, scan cannot proceed.");
     }
   }
 
@@ -101,11 +128,11 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
 
     // List of DeviceNames for the beacons
     final List<String> beaconNames = [
+      '9FCE50BD-9F68-6245-EC2D-37946CD12A1B',
+      '7369744756d736974756d736974756d15',
       'D5:A4:AE:5C:DC:75',
-      'IndoorNavPRO 2',
-      'IndoorNavPRO 3',
-      'IndoorNavPRO 4',
-      'IndoorNavPRO 5',
+      'IndoorNavPRO 2s',
+      '736974475-6d73-6974-756d-736974756d15',
       'IndoorNavPRO 6',
       'IndoorNavPRO 7',
     ];

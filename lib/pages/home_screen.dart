@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
 import 'package:firebase_messaging/firebase_messaging.dart'; // Import Firebase Messaging
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,7 +14,20 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _requestLocationPermission();
     _requestNotificationPermission();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    // Request always permission first as a test
+    await Permission.locationAlways.request();
+    // Now request "when in use" permission
+    var status = await Permission.locationWhenInUse.request();
+    if (status.isGranted) {
+      print("Location permission granted.");
+    } else {
+      print("Location permission denied.");
+    }
   }
 
   // Method to request notification permissions
