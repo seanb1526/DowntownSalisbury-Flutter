@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // Import the flutter_svg package
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io' show Platform;
 import 'rewards_screen.dart';
 import '../widgets/store_item.dart';
-import '../firebase_auth.dart'; // Import your Firebase Auth Service
-import '../helpers/sqflite_helper.dart'; // Import your DatabaseHelper
-import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
-import 'dart:async';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:io' show Platform; // For Platform checks
-import 'package:location/location.dart'; // For Location services
-
-final flutterReactiveBle = FlutterReactiveBle();
+import '../firebase_auth.dart';
+import '../helpers/sqflite_helper.dart';
 
 class BeaconHomeScreen extends StatefulWidget {
   const BeaconHomeScreen({super.key});
@@ -21,7 +17,8 @@ class BeaconHomeScreen extends StatefulWidget {
 
 class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
   final FirebaseAuthService _authService = FirebaseAuthService();
-  int _coinBalance = 0; // Store user's coin balance
+  int _coinBalance = 0;
+  bool isScanning = false;
 
   @override
   void initState() {
@@ -30,156 +27,119 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     requestPermissions();
   }
 
-  // Fetch the user's coin balance from the database
+  @override
+  void dispose() {
+    // Make sure to stop scanning when disposing
+    FlutterBluePlus.stopScan();
+    super.dispose();
+  }
+
+  Future<void> requestPermissions() async {
+    // Request necessary permissions on Android
+    if (Platform.isAndroid) {
+      await Permission.bluetoothScan.request();
+      await Permission.bluetoothConnect.request();
+      await Permission.locationWhenInUse.request();
+    }
+
+    // Check if Bluetooth is supported
+    if (await FlutterBluePlus.isSupported == false) {
+      print("Bluetooth not available");
+      return;
+    }
+
+    // Check if Bluetooth is on
+    BluetoothAdapterState bluetoothState =
+        await FlutterBluePlus.adapterState.first;
+    if (bluetoothState != BluetoothAdapterState.on) {
+      print("Bluetooth is off");
+      // On Android, this will open Bluetooth settings
+      // On iOS, this will show a "Please turn on Bluetooth" dialog
+      await FlutterBluePlus.turnOn();
+    } else {
+      print("Bluetooth is already on");
+    }
+  }
+
   Future<void> _fetchCoinBalance() async {
-    final user = await _authService.getCurrentUser(); // Get the current user
+    final user = await _authService.getCurrentUser();
     if (user != null) {
-      final userId = user.uid; // Get the Firebase user ID
-      final balance = await DatabaseHelper().getCurrency(userId);
+      final balance = await DatabaseHelper().getCurrency(user.uid);
       setState(() {
-        _coinBalance = balance ?? 0; // Set balance or default to 0 if not found
+        _coinBalance = balance ?? 0;
       });
     }
   }
 
-  // Update the user's coin balance when they check in
   Future<void> _addCoins(int coinsToAdd) async {
-    final user = await _authService.getCurrentUser(); // Get the current user
+    final user = await _authService.getCurrentUser();
     if (user != null) {
-      final userId = user.uid; // Get the Firebase user ID
-      final currentBalance = await DatabaseHelper().getCurrency(userId) ?? 0;
+      final currentBalance = await DatabaseHelper().getCurrency(user.uid) ?? 0;
       final newBalance = currentBalance + coinsToAdd;
-
-      // Update the coin balance in the database
-      await DatabaseHelper().updateCurrency(userId, newBalance);
-
-      // Update the UI with the new balance
+      await DatabaseHelper().updateCurrency(user.uid, newBalance);
       setState(() {
         _coinBalance = newBalance;
       });
     }
   }
 
-  Future<void> requestPermissions() async {
-    // Location permission (which you already have)
-    await Permission.locationWhenInUse.request();
-
-    // For Android 12+
-    if (Platform.isAndroid) {
-      await Permission.bluetoothScan.request();
-      await Permission.bluetoothConnect.request();
-      // Also check if location services are enabled
-      bool serviceEnabled = await Location().serviceEnabled();
-      if (!serviceEnabled) {
-        serviceEnabled = await Location().requestService();
-        if (!serviceEnabled) {
-          print("Location services not enabled");
-          return;
-        }
-      }
+  Future<void> scanForBeacon(String beaconId) async {
+    if (isScanning) {
+      print("Already scanning");
+      return;
     }
-  }
 
-  Future<void> scanForBeacon(String targetBeaconId) async {
-    await requestPermissions();
+    setState(() {
+      isScanning = true;
+    });
 
-    if (await Permission.locationWhenInUse.isGranted &&
-        (Platform.isIOS || await Permission.bluetoothScan.isGranted)) {
-      print("\nStarting BLE scan for beacon: $targetBeaconId");
+    print("Starting scan for beacon: $beaconId");
 
-      StreamSubscription<DiscoveredDevice>? scanSubscription;
-
-      scanSubscription = flutterReactiveBle.scanForDevices(
-        withServices: [],
-        scanMode: ScanMode.lowLatency,
-      ).listen(
-        (device) {
-          // First check if it's an iBKS beacon by manufacturer ID
-          if (device.manufacturerData.length >= 2) {
-            int manufacturerId =
-                (device.manufacturerData[1] << 8) | device.manufacturerData[0];
+    try {
+      // Start scanning
+      FlutterBluePlus.scanResults.listen(
+        (results) {
+          for (ScanResult r in results) {
             print(
-                "\nDevice Found - Manufacturer ID: 0x${manufacturerId.toRadixString(16)}");
-            print("MAC Address: ${device.id}");
+                '${r.device.remoteId}: "${r.device.platformName}" found! rssi: ${r.rssi}, advertisementData: ${r.advertisementData.manufacturerData}');
 
-            // For iBKS beacons specifically
-            if (device.manufacturerData.length >= 23) {
-              // Extract the iBeacon prefix (should be 0x0215 for iBeacon)
-              int iBeaconPrefix = (device.manufacturerData[3] << 8) |
-                  device.manufacturerData[2];
-              print("iBeacon Prefix: 0x${iBeaconPrefix.toRadixString(16)}");
-
-              // Extract UUID - for iBeacon format
-              List<int> uuidBytes = device.manufacturerData.sublist(4, 20);
-              String uuid = uuidBytes
-                  .map((b) => b.toRadixString(16).padLeft(2, '0'))
-                  .join('');
-
-              // Format UUID with dashes
-              String formattedUuid = uuid
-                  .replaceAllMapped(
-                      RegExp(r'^(.{8})(.{4})(.{4})(.{4})(.{12})$'),
-                      (m) => '${m[1]}-${m[2]}-${m[3]}-${m[4]}-${m[5]}')
-                  .toUpperCase();
-
-              print("UUID: $formattedUuid");
-
-              // Extract Major and Minor values
-              int major = (device.manufacturerData[20] << 8) |
-                  device.manufacturerData[21];
-              int minor = (device.manufacturerData[22] << 8) |
-                  device.manufacturerData[23];
-              print("Major: $major, Minor: $minor");
-
-              // Check if this matches our target (either by UUID or MAC)
-              if (formattedUuid == targetBeaconId.toUpperCase() ||
-                  device.id.toUpperCase() == targetBeaconId.toUpperCase()) {
-                print("✓ MATCH FOUND!");
-                scanSubscription?.cancel();
-                return;
-              }
-            }
-
-            // For Eddystone format
-            if (device.serviceData.containsKey('feaa')) {
-              print("Eddystone Frame Found:");
-              List<int> eddystoneData = device.serviceData['feaa']!;
-              print(
-                  "Eddystone Data: ${eddystoneData.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':')}");
-
-              if (device.id.toUpperCase() == targetBeaconId.toUpperCase()) {
-                print("✓ EDDYSTONE MATCH FOUND!");
-                scanSubscription?.cancel();
-                return;
-              }
+            // Check if this is our target beacon
+            if (r.device.remoteId.toString() == beaconId ||
+                r.device.platformName.contains(beaconId)) {
+              print("Found matching beacon!");
+              FlutterBluePlus.stopScan();
+              setState(() {
+                isScanning = false;
+              });
+              _addCoins(10); // Add coins when beacon is found
+              return;
             }
           }
         },
-        onError: (error) {
-          print("Error scanning for beacons: $error");
-          scanSubscription?.cancel();
+        onError: (e) {
+          print("Scan error: $e");
+          setState(() {
+            isScanning = false;
+          });
         },
       );
+
+      // Start scanning
+      await FlutterBluePlus.startScan(
+        timeout: const Duration(seconds: 10),
+        androidUsesFineLocation: true,
+      );
+    } catch (e) {
+      print("Error starting scan: $e");
+      setState(() {
+        isScanning = false;
+      });
     }
-  }
 
-// Helper function to parse manufacturer data (simplified example)
-  String? parseManufacturerData(List<int> data) {
-    if (data.length < 2) return null;
-
-    // Check if it's Apple's company identifier (0x004C)
-    if (data[0] == 0x4C && data[1] == 0x00) {
-      // Parse the UUID from the manufacturer data
-      // This is a simplified example - you'll need to implement the actual parsing
-      // based on your beacon's format
-    }
-    return null;
-  }
-
-// Helper function to parse Eddystone data
-  String? parseEddystoneData(List<int> data) {
-    // Implement Eddystone parsing based on your beacon's format
-    return null;
+    // After timeout
+    setState(() {
+      isScanning = false;
+    });
   }
 
   @override
@@ -273,9 +233,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                     name: storeNames[index],
                     isAvailable: (index % 2 == 0) ? 'available' : 'unavailable',
                     onCheckIn: () async {
-                      // Attempt to scan for the beacon when checking in
-                      await scanForBeacon(beaconNames[index]);
-
+                      scanForBeacon(beaconNames[index]);
                       // If the beacon is found, add 10 coins
                       _addCoins(10);
                     },
