@@ -139,20 +139,6 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                 return;
               }
             }
-
-            // For Eddystone format
-            if (device.serviceData.containsKey('feaa')) {
-              print("Eddystone Frame Found:");
-              List<int> eddystoneData = device.serviceData['feaa']!;
-              print(
-                  "Eddystone Data: ${eddystoneData.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':')}");
-
-              if (device.id.toUpperCase() == targetBeaconId.toUpperCase()) {
-                print("✓ EDDYSTONE MATCH FOUND!");
-                scanSubscription?.cancel();
-                return;
-              }
-            }
           }
         },
         onError: (error) {
@@ -176,12 +162,6 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     return null;
   }
 
-// Helper function to parse Eddystone data
-  String? parseEddystoneData(List<int> data) {
-    // Implement Eddystone parsing based on your beacon's format
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     // List of store names
@@ -190,20 +170,31 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
       'Delmarva Home Grown',
       'Blackwater Apothecary',
       'Breathe Interiors',
-      'Store 5',
+      'Rommel Center',
       'Store 6',
       'Store 7',
     ];
 
-    // List of DeviceNames for the beacons
-    final List<String> beaconNames = [
-      '9FCE50BD-9F68-6245-EC2D-37946CD12A1B',
-      'B77DB3A4-2EBA-EA22-5066-D87D0A5E1526',
+    // List of MAC address for the beacons on android
+    final List<String> macAddr = [
       'D5:A4:AE:5C:DC:75',
+      'C1:A2:64:3A:95:8F',
+      'D5:8D:93:99:C9:BF',
+      'D9:11:A6:6F:BC:00',
       'FC:DB:AC:C2:5F:DB',
-      'nothingHere',
       'nothingHere2',
       'nothingHere3',
+    ];
+
+    // List of device ID's for the beacons on iOS
+    final List<String> iBKSids = [
+      '9FC#50BD-9F68-6245-EC2D-37946CD12A1B',
+      'B77DB3A4-2EBA-EA22-5066-D87D0A5E1526',
+      '21A5BBAC-6A07-68ED-4EB8-69D806DE9781',
+      'D8169B51-B331-4BAB-A719-9DD6087AAC06',
+      '12E17224-877F-6EC5-1652-8C699316E86E',
+      'noneId',
+      'noneId',
     ];
 
     // List of colors for StoreItem
@@ -272,15 +263,15 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                     icon: Icons.map_outlined,
                     name: storeNames[index],
                     isAvailable: (index % 2 == 0) ? 'available' : 'unavailable',
+                    mac: " ",
+                    iBKS: " ",
                     onCheckIn: () async {
                       // Attempt to scan for the beacon when checking in
-                      await scanForBeacon(beaconNames[index]);
-
+                      await scanForBeacon(macAddr[index]);
                       // If the beacon is found, add 10 coins
                       _addCoins(10);
                     },
                     color: itemColor,
-                    beaconID: beaconNames[index],
                   );
                 },
               ),

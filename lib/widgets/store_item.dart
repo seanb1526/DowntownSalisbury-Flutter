@@ -6,7 +6,8 @@ class StoreItem extends StatelessWidget {
   final String isAvailable;
   final VoidCallback onCheckIn;
   final Color color; // Add this line
-  final String beaconID;
+  final String mac; // store mac address of beacon for android
+  final String iBKS; // store iBKS id for iOS
 
   StoreItem({
     required this.icon,
@@ -14,7 +15,8 @@ class StoreItem extends StatelessWidget {
     required this.isAvailable,
     required this.onCheckIn,
     required this.color, // Update this line
-    required this.beaconID,
+    required this.mac,
+    required this.iBKS,
   });
 
   @override
