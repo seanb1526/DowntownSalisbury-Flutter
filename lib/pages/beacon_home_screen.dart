@@ -267,7 +267,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                     iBKS: " ",
                     onCheckIn: () async {
                       // Attempt to scan for the beacon when checking in
-                      await scanForBeacon(macAddr[index]);
+                      await scanForBeacon(iBKSids[index]);
                       // If the beacon is found, add 10 coins
                       _addCoins(10);
                     },
