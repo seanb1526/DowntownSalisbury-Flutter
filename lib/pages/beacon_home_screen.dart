@@ -80,72 +80,56 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     }
   }
 
-  Future<void> scanForBeacon(String targetBeaconId) async {
-    await requestPermissions();
+  Future<void> scanForBeacon(String beaconId) async {
+    bool isScanning = false;
 
-    if (await Permission.locationWhenInUse.isGranted &&
-        (Platform.isIOS || await Permission.bluetoothScan.isGranted)) {
-      print("\nStarting BLE scan for beacon: $targetBeaconId");
+    // Check if Bluetooth is powered on before scanning
+    final bleStatus = await flutterReactiveBle.statusStream.firstWhere(
+      (status) => status == BleStatus.ready,
+      orElse: () => BleStatus.unknown,
+    );
+
+    if (bleStatus != BleStatus.ready) {
+      print("Bluetooth is not powered on. Scan cannot proceed.");
+      return; // Exit if Bluetooth isn't ready
+    }
+
+    // Proceed with scan if Bluetooth is powered on
+    if (!isScanning) {
+      isScanning = true; // Prevent multiple scans
+
+      print("Starting BLE scan for beacon with UUID: $beaconId");
 
       StreamSubscription<DiscoveredDevice>? scanSubscription;
 
       scanSubscription = flutterReactiveBle.scanForDevices(
         withServices: [],
-        scanMode: ScanMode.lowLatency,
       ).listen(
         (device) {
-          // First check if it's an iBKS beacon by manufacturer ID
-          if (device.manufacturerData.length >= 2) {
-            int manufacturerId =
-                (device.manufacturerData[1] << 8) | device.manufacturerData[0];
-            print(
-                "\nDevice Found - Manufacturer ID: 0x${manufacturerId.toRadixString(16)}");
-            print("MAC Address: ${device.id}");
+          print("Found device: ${device.id}, name: ${device.name}");
 
-            // For iBKS beacons specifically
-            if (device.manufacturerData.length >= 23) {
-              // Extract the iBeacon prefix (should be 0x0215 for iBeacon)
-              int iBeaconPrefix = (device.manufacturerData[3] << 8) |
-                  device.manufacturerData[2];
-              print("iBeacon Prefix: 0x${iBeaconPrefix.toRadixString(16)}");
+          if (device.id == beaconId) {
+            print("Beacon found with UUID: $beaconId");
 
-              // Extract UUID - for iBeacon format
-              List<int> uuidBytes = device.manufacturerData.sublist(4, 20);
-              String uuid = uuidBytes
-                  .map((b) => b.toRadixString(16).padLeft(2, '0'))
-                  .join('');
-
-              // Format UUID with dashes
-              String formattedUuid = uuid
-                  .replaceAllMapped(
-                      RegExp(r'^(.{8})(.{4})(.{4})(.{4})(.{12})$'),
-                      (m) => '${m[1]}-${m[2]}-${m[3]}-${m[4]}-${m[5]}')
-                  .toUpperCase();
-
-              print("UUID: $formattedUuid");
-
-              // Extract Major and Minor values
-              int major = (device.manufacturerData[20] << 8) |
-                  device.manufacturerData[21];
-              int minor = (device.manufacturerData[22] << 8) |
-                  device.manufacturerData[23];
-              print("Major: $major, Minor: $minor");
-
-              // Check if this matches our target (either by UUID or MAC)
-              if (formattedUuid == targetBeaconId.toUpperCase() ||
-                  device.id.toUpperCase() == targetBeaconId.toUpperCase()) {
-                print("✓ MATCH FOUND!");
-                scanSubscription?.cancel();
-                return;
-              }
-            }
+            // Stop scanning
+            scanSubscription?.cancel();
+            isScanning = false;
           }
         },
         onError: (error) {
           print("Error scanning for beacons: $error");
+
+          // Cancel on error and reset state
           scanSubscription?.cancel();
+          isScanning = false;
+        },
+        onDone: () {
+          print("Scan finished.");
+          isScanning = false;
         },
       );
+    } else {
+      print("A scan is already running.");
     }
   }
 
