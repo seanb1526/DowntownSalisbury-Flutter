@@ -244,6 +244,8 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                       } else if (Platform.isIOS) {
                         print("Search using device ID");
                         await scanForBeacon(iBKSids[index]);
+                      } else {
+                        print("Incorrect OS");
                       }
                       _addCoins(10);
                     },
