@@ -6,6 +6,7 @@ import '../firebase_auth.dart'; // Import your Firebase Auth Service
 import '../helpers/sqflite_helper.dart'; // Import your DatabaseHelper
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'dart:async';
+import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform; // For Platform checks
 import 'package:location/location.dart'; // For Location services
@@ -133,19 +134,6 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     }
   }
 
-// Helper function to parse manufacturer data (simplified example)
-  String? parseManufacturerData(List<int> data) {
-    if (data.length < 2) return null;
-
-    // Check if it's Apple's company identifier (0x004C)
-    if (data[0] == 0x4C && data[1] == 0x00) {
-      // Parse the UUID from the manufacturer data
-      // This is a simplified example - you'll need to implement the actual parsing
-      // based on your beacon's format
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     // List of store names
@@ -247,12 +235,16 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                     icon: Icons.map_outlined,
                     name: storeNames[index],
                     isAvailable: (index % 2 == 0) ? 'available' : 'unavailable',
-                    mac: " ",
-                    iBKS: " ",
+                    mac: macAddr[index],
+                    iBKS: iBKSids[index],
                     onCheckIn: () async {
-                      // Attempt to scan for the beacon when checking in
-                      await scanForBeacon(iBKSids[index]);
-                      // If the beacon is found, add 10 coins
+                      if (Platform.isAndroid) {
+                        print("Search using MAC address");
+                        await scanForBeacon(macAddr[index]);
+                      } else if (Platform.isIOS) {
+                        print("Search using device ID");
+                        await scanForBeacon(iBKSids[index]);
+                      }
                       _addCoins(10);
                     },
                     color: itemColor,
