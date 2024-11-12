@@ -172,10 +172,10 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
 
     // List of device ID's for the beacons on iOS
     final List<String> iBKSids = [
-      '9FC#50BD-9F68-6245-EC2D-37946CD12A1B',
+      '9FCE50BD-9F68-6245-EC2D-37946CD12A1B',
       'B77DB3A4-2EBA-EA22-5066-D87D0A5E1526',
       '21A5BBAC-6A07-68ED-4EB8-69D806DE9781',
-      'D8169B51-B331-4BAB-A719-9DD6087AAC06',
+      'DB169B51-B331-4BAB-A719-9DD6087AAC06',
       '12E17224-877F-6EC5-1652-8C699316E86E',
       'noneId',
       'noneId',
