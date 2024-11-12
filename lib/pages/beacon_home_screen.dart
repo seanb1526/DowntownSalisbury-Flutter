@@ -81,8 +81,10 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     }
   }
 
-  Future<void> scanForBeacon(String beaconId) async {
+  // This function scans for our BLE beacon points - returns true/false if it's found
+  Future<bool> scanForBeacon(String beaconId) async {
     bool isScanning = false;
+    final completer = Completer<bool>();
 
     // Check if Bluetooth is powered on before scanning
     final bleStatus = await flutterReactiveBle.statusStream.firstWhere(
@@ -92,16 +94,25 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
 
     if (bleStatus != BleStatus.ready) {
       print("Bluetooth is not powered on. Scan cannot proceed.");
-      return; // Exit if Bluetooth isn't ready
+      return false; // Exit with false if Bluetooth isn't ready
     }
 
-    // Proceed with scan if Bluetooth is powered on
     if (!isScanning) {
-      isScanning = true; // Prevent multiple scans
-
+      isScanning = true;
       print("Starting BLE scan for beacon with UUID: $beaconId");
 
       StreamSubscription<DiscoveredDevice>? scanSubscription;
+      Timer? timeoutTimer;
+
+      // Set up the timeout to stop scanning after 5 seconds
+      timeoutTimer = Timer(Duration(seconds: 5), () {
+        if (isScanning) {
+          print("Beacon was not found within 5 seconds.");
+          scanSubscription?.cancel();
+          isScanning = false;
+          completer.complete(false); // Complete with false if no match is found
+        }
+      });
 
       scanSubscription = flutterReactiveBle.scanForDevices(
         withServices: [],
@@ -112,26 +123,35 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
           if (device.id == beaconId) {
             print("Beacon found with UUID: $beaconId");
 
-            // Stop scanning
+            // Stop scanning and cancel the timeout timer
             scanSubscription?.cancel();
+            timeoutTimer?.cancel();
             isScanning = false;
+            completer.complete(true); // Complete with true if a match is found
           }
         },
         onError: (error) {
           print("Error scanning for beacons: $error");
 
-          // Cancel on error and reset state
+          // Cancel on error, stop the timer, and complete with false
           scanSubscription?.cancel();
+          timeoutTimer?.cancel();
           isScanning = false;
+          completer.complete(false);
         },
         onDone: () {
           print("Scan finished.");
           isScanning = false;
+          timeoutTimer?.cancel();
         },
       );
     } else {
       print("A scan is already running.");
+      return false;
     }
+
+    // Wait until the completer completes with either true or false
+    return completer.future;
   }
 
   @override
@@ -240,14 +260,25 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                     onCheckIn: () async {
                       if (Platform.isAndroid) {
                         print("Search using MAC address");
-                        await scanForBeacon(macAddr[index]);
+                        bool isFound = await scanForBeacon(macAddr[index]);
+
+                        if (isFound) {
+                          _addCoins(10);
+                        } else {
+                          print("Scan for beacon returned false");
+                        }
                       } else if (Platform.isIOS) {
                         print("Search using device ID");
-                        await scanForBeacon(iBKSids[index]);
+                        bool isFound = await scanForBeacon(iBKSids[index]);
+
+                        if (isFound) {
+                          _addCoins(10);
+                        } else {
+                          print("Scan for beacon returned false");
+                        }
                       } else {
                         print("Incorrect OS");
                       }
-                      _addCoins(10);
                     },
                     color: itemColor,
                   );
