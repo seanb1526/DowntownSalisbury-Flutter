@@ -85,6 +85,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
   Future<bool> scanForBeacon(String beaconId) async {
     bool isScanning = false;
     final completer = Completer<bool>();
+    const int proximityThreshold = -72; // Approximate RSSI for 10-15 feet
 
     // Check if Bluetooth is powered on before scanning
     final bleStatus = await flutterReactiveBle.statusStream.firstWhere(
@@ -94,7 +95,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
 
     if (bleStatus != BleStatus.ready) {
       print("Bluetooth is not powered on. Scan cannot proceed.");
-      return false; // Exit with false if Bluetooth isn't ready
+      return false;
     }
 
     if (!isScanning) {
@@ -107,10 +108,9 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
       // Set up the timeout to stop scanning after 5 seconds
       timeoutTimer = Timer(Duration(seconds: 5), () {
         if (isScanning) {
-          print("Beacon was not found within 5 seconds.");
           scanSubscription?.cancel();
           isScanning = false;
-          completer.complete(false); // Complete with false if no match is found
+          completer.complete(false);
         }
       });
 
@@ -118,16 +118,24 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
         withServices: [],
       ).listen(
         (device) {
-          print("Found device: ${device.id}, name: ${device.name}");
-
           if (device.id == beaconId) {
             print("Beacon found with UUID: $beaconId");
 
-            // Stop scanning and cancel the timeout timer
-            scanSubscription?.cancel();
-            timeoutTimer?.cancel();
-            isScanning = false;
-            completer.complete(true); // Complete with true if a match is found
+            // Check if the device is within the proximity threshold
+            if (device.rssi >= proximityThreshold) {
+              print(
+                  "Beacon is within 10-15 feet. Current RSSI: ${device.rssi}");
+
+              // Stop scanning and cancel the timeout timer
+              scanSubscription?.cancel();
+              timeoutTimer?.cancel();
+              isScanning = false;
+              completer.complete(
+                  true); // Complete with true if both conditions are met
+            } else {
+              print(
+                  "Beacon found, but please get closer. Current RSSI: ${device.rssi}");
+            }
           }
         },
         onError: (error) {
