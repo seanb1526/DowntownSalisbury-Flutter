@@ -216,26 +216,87 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                     mac: store['mac'],
                     iBKS: store['iBKS'],
                     onCheckIn: () async {
-                      if (Platform.isAndroid) {
-                        print("Search using MAC Address");
-                        bool isFound = await scanForBeacon(store['mac']);
+                      // Check if the store is available first
+                      if (store['isAvailable'] == 'available') {
+                        if (Platform.isAndroid) {
+                          print("Search using MAC Address");
+                          bool isFound = await scanForBeacon(store['mac']);
 
-                        if (isFound) {
-                          _addCoins(10);
-                        } else {
-                          print("Scan for beacon returned false ");
-                        }
-                      } else if (Platform.isIOS) {
-                        print("Search using ID ");
-                        bool isFound = await scanForBeacon(store['iBKS']);
+                          if (isFound) {
+                            _addCoins(10); // Add coins if beacon is found
 
-                        if (isFound) {
-                          _addCoins(10);
+                            // Update store availability after successful scan
+                            String newAvailability =
+                                'unavailable'; // Mark as unavailable after successful scan
+                            await DatabaseHelper().updateStoreAvailability(
+                                store['storeID'], newAvailability);
+
+                            // Update the store data in the list
+                            setState(() {
+                              _stores = _stores.map((item) {
+                                if (item['storeID'] == store['storeID']) {
+                                  return {
+                                    ...item,
+                                    'isAvailable':
+                                        newAvailability, // Change the availability in the store data
+                                  };
+                                }
+                                return item;
+                              }).toList(); // Rebuild the stores list with updated availability
+                            });
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      "Store is unavailable, cannot scan.")),
+                            );
+                            print("Scan for beacon returned false");
+                          }
+                        } else if (Platform.isIOS) {
+                          print("Search using ID");
+                          bool isFound = await scanForBeacon(store['iBKS']);
+
+                          if (isFound) {
+                            _addCoins(10); // Add coins if beacon is found
+
+                            // Update store availability after successful scan
+                            String newAvailability =
+                                'unavailable'; // Mark as unavailable after successful scan
+                            await DatabaseHelper().updateStoreAvailability(
+                                store['storeID'], newAvailability);
+
+                            // Update the store data in the list
+                            setState(() {
+                              _stores = _stores.map((item) {
+                                if (item['storeID'] == store['storeID']) {
+                                  return {
+                                    ...item,
+                                    'isAvailable':
+                                        newAvailability, // Change the availability in the store data
+                                  };
+                                }
+                                return item;
+                              }).toList(); // Rebuild the stores list with updated availability
+                            });
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      "Store is unavailable, cannot scan.")),
+                            );
+                            print("Scan for beacon returned false");
+                          }
                         } else {
-                          print("Scan for beacon returned false ");
+                          print("Incompatible OS");
                         }
                       } else {
-                        print("Incompatible OS");
+                        // If the store is unavailable, show a snack bar message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content:
+                                  Text("Store is unavailable, cannot scan.")),
+                        );
+                        print("Store is unavailable, cannot scan.");
                       }
                     },
                     color: color,
@@ -272,7 +333,6 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 16),
           ],
         ),
       ),
