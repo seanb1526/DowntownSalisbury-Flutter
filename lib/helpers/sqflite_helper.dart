@@ -42,7 +42,7 @@ class DatabaseHelper {
       color TEXT,
       mac TEXT,
       iBKS TEXT,
-      lastSuccessfulScanTime TEXT,
+      lastSuccessfulScanTime INTEGER DEFAULT 0,  -- Changed to INTEGER for milliseconds
       FOREIGN KEY (user_id) REFERENCES user_currency (user_id)
     )
   ''');
@@ -141,7 +141,7 @@ class DatabaseHelper {
     }
   }
 
-// Get all stores
+  // Get all stores
   Future<List<Map<String, dynamic>>> getStores() async {
     final db = await database;
 
@@ -156,13 +156,32 @@ class DatabaseHelper {
   }
 
   // Update store availability for a specific store
-  Future<void> updateStoreAvailability(int storeID, String isAvailable) async {
+  Future<void> updateStoreAvailability(
+      int storeId, String availability, int lastScanTime) async {
     final db = await database;
+
     await db.update(
-      'Stores',
-      {'isAvailable': isAvailable},
+      'stores',
+      {
+        'isAvailable': availability,
+        'lastSuccessfulScanTime': lastScanTime, // Store the timestamp
+      },
       where: 'storeID = ?',
-      whereArgs: [storeID],
+      whereArgs: [storeId],
+    );
+  }
+
+  // Update the last successful scan time for a store
+  Future<void> updateLastSuccessfulScanTime(int storeId, int timestamp) async {
+    final db = await database;
+
+    await db.update(
+      'stores',
+      {
+        'lastSuccessfulScanTime': timestamp,
+      },
+      where: 'storeID = ?',
+      whereArgs: [storeId],
     );
   }
 }
