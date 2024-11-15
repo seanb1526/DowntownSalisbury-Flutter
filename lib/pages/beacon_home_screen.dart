@@ -46,9 +46,13 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
   }
 
   Future<void> _fetchStores() async {
-    final stores = await DatabaseHelper().getStores(); // Fetch stores
     setState(() {
-      _stores = stores; // Update the state with the fetched stores
+      _stores.clear(); // Clear the list before fetching new data
+    });
+
+    final fetchedStores = await DatabaseHelper().getStores(); // Fetch new data
+    setState(() {
+      _stores = fetchedStores;
     });
   }
 

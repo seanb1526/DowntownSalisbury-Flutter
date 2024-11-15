@@ -85,6 +85,36 @@ class DatabaseHelper {
     );
   }
 
+  Future<void> clearStores() async {
+    final db = await database;
+    await db.delete('stores'); // Clears all rows in the stores table
+  }
+
+  Future<void> insertOrUpdateStore(Map<String, dynamic> store) async {
+    final db = await database;
+
+    // Check if the store exists in the database
+    final existingStore = await db.query(
+      'Stores',
+      where:
+          'storeID = ?', // Replace 'id' with the actual unique identifier for your stores
+      whereArgs: [store['id']], // Match against the unique store ID
+    );
+
+    if (existingStore.isEmpty) {
+      // Insert a new record if the store does not exist
+      await db.insert('stores', store);
+    } else {
+      // Update the existing record if the store already exists
+      await db.update(
+        'stores',
+        store,
+        where: 'id = ?', // Update the record that matches the store's ID
+        whereArgs: [store['storeID']],
+      );
+    }
+  }
+
   // Fetch store data from Firestore and insert it into SQLite
   Future<void> syncStoresFromFirestore(String userId) async {
     // Fetch data from Firestore
