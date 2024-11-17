@@ -252,7 +252,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                         await DatabaseHelper().updateStoreAvailability(
                           store['storeID'],
                           newAvailability,
-                          0, // Pass the current timestamp as last scan time
+                          0,
                         );
                         // Update the store data in the list
                         setState(() {
@@ -263,7 +263,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                                 'isAvailable':
                                     newAvailability, // Change the availability in the store data
                                 'lastSuccessfulScanTime':
-                                    currentTime, // Store the last successful scan time
+                                    0, // Store the last successful scan time
                               };
                             }
                             return item;
