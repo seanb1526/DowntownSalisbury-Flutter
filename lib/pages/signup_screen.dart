@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../firebase_auth.dart'; // Import Firebase Auth Service
-import 'login_screen.dart'; // Import LoginScreen
-import 'package:downtown_salisbury/main.dart'; // Main app entry point
-import '../helpers/sqflite_helper.dart'; // Import Database Helper
-import '../helpers/firestore_service.dart'; // Import Firestore Service
+import 'package:flutter_svg/flutter_svg.dart'; // Import SVG package
+import '../firebase_auth.dart'; // Firebase Auth Service
+import 'login_screen.dart'; // LoginScreen
+import 'package:downtown_salisbury/main.dart'; // MainScreen
+import '../helpers/sqflite_helper.dart'; // DatabaseHelper
+import '../helpers/firestore_service.dart'; // FirestoreService
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -25,8 +26,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       if (user != null) {
         String userId = user.uid;
+
         await DatabaseHelper().updateCurrency(userId, 0);
         await DatabaseHelper().clearStores();
+
         List<Map<String, dynamic>> storesData =
             await _firestoreService.getStoresData();
 
@@ -36,6 +39,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         }
 
         print("Sign up successful: ${user.email}");
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -75,14 +79,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
           'Sign Up',
           style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: Color(0xFF448AFF),
+        backgroundColor: Color.fromARGB(255, 25, 36, 89), // Your RGBA color
         leading: IconButton(
-          icon: Icon(Icons.close, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => MainScreen()),
-            );
+            Navigator.pop(context);
           },
         ),
       ),
@@ -90,21 +91,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 30),
+              SvgPicture.asset(
+                'assets/images/navpro.svg',
+                height: 80, // Adjust size as needed
+                width: 80,
+              ),
+              SizedBox(height: 20),
               Text(
-                'Welcome!',
+                'Create Your Account',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF448AFF),
+                  color: Color.fromRGBO(252, 181, 85, 1),
                 ),
               ),
               SizedBox(height: 10),
               Text(
-                'Create your account to get started.',
+                'Sign up to start exploring and earning rewards!',
                 style: TextStyle(fontSize: 18, color: Colors.black54),
+                textAlign: TextAlign.center,
               ),
               SizedBox(height: 30),
               TextField(
@@ -135,7 +143,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ElevatedButton(
                 onPressed: _signUp,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF448AFF),
+                  backgroundColor: Color.fromRGBO(252, 181, 8, 1),
                   minimumSize: Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -156,8 +164,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     );
                   },
                   child: Text(
-                    'Already have an account? Login',
-                    style: TextStyle(color: Color(0xFF448AFF)),
+                    'Already have an account? Log In',
+                    style: TextStyle(color: Color.fromRGBO(252, 181, 8, 1)),
                   ),
                 ),
               ),

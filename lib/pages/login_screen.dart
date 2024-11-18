@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Import SVG package
 import '../firebase_auth.dart'; // Firebase Auth Service
 import 'signup_screen.dart';
 import 'package:downtown_salisbury/main.dart'; // MainScreen
@@ -17,103 +18,170 @@ class _LoginScreenState extends State<LoginScreen> {
   final FirestoreService _firestoreService = FirestoreService();
 
   Future<void> _login() async {
-    final user = await _authService.logIn(
-      _emailController.text,
-      _passwordController.text,
-    );
-
-    if (user != null) {
-      // Firebase UID (user's unique identifier)
-      String userId = user.uid;
-
-      // 1. Check if the user has a record in the SQLite currency table
-      final existingBalance = await DatabaseHelper().getCurrency(userId);
-
-      // If no currency record exists, initialize the user's currency to 0
-      if (existingBalance == null) {
-        await DatabaseHelper()
-            .updateCurrency(userId, 0); // Initialize currency to 0
-      }
-
-      // 2. Check if the user has stores data in the SQLite Stores table
-      final storeRecords = await DatabaseHelper().getStores();
-
-      // If no store records exist, fetch from Firestore and insert into SQLite
-      if (storeRecords.isEmpty) {
-        // Fetch store data from Firestore
-        List<Map<String, dynamic>> storesData =
-            await _firestoreService.getStoresData();
-
-        // Insert each store data entry into SQLite Stores table
-        for (var store in storesData) {
-          store['user_id'] =
-              userId; // Associate each store entry with the current user
-          await DatabaseHelper().insertStoreData(store);
-        }
-      } else {
-        print("Stores SQLite table does exist, or we believe it does");
-      }
-
-      print("Login successful: ${user.email}");
-
-      // Navigate to MainScreen with BeaconHomeScreen as the initial page
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MainScreen(initialIndex: 3), // Pass index
-        ),
+    try {
+      final user = await _authService.logIn(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
-    } else {
-      // Handle login error (show a message to the user)
-      print("Login failed");
-      // Show error message to the user
+
+      if (user != null) {
+        String userId = user.uid;
+
+        final existingBalance = await DatabaseHelper().getCurrency(userId);
+
+        if (existingBalance == null) {
+          await DatabaseHelper().updateCurrency(userId, 0);
+        }
+
+        final storeRecords = await DatabaseHelper().getStores();
+
+        if (storeRecords.isEmpty) {
+          List<Map<String, dynamic>> storesData =
+              await _firestoreService.getStoresData();
+
+          for (var store in storesData) {
+            store['user_id'] = userId;
+            await DatabaseHelper().insertStoreData(store);
+          }
+        }
+
+        print("Login successful: ${user.email}");
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MainScreen(initialIndex: 3),
+          ),
+        );
+      } else {
+        _showErrorDialog('Login failed. Please try again.');
+      }
+    } catch (e) {
+      print("Error during login: $e");
+      _showErrorDialog('An error occurred. Please try again.');
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: Text(
+          'Login',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Color.fromARGB(255, 25, 36, 89), // Your RGBA color
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            // Navigate back to the Main Screen
             Navigator.pop(context);
           },
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _login,
-              child: Text('Login'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Navigate to Sign Up screen
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => SignUpScreen()),
-                );
-              },
-              child: Text('Don\'t have an account? Sign Up'),
-            ),
-          ],
+
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(height: 30),
+              SvgPicture.asset(
+                'assets/images/navpro.svg',
+                height: 80, // Adjust size as needed
+                width: 80,
+              ),
+              SizedBox(height: 20),
+              Text(
+                'Welcome Back!',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromRGBO(252, 181, 85, 1),
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                'Log in to your account to continue.',
+                style: TextStyle(fontSize: 18, color: Colors.black54),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 30),
+              TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                obscureText: true,
+              ),
+              SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: _login,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color.fromRGBO(252, 181, 8, 1),
+                  minimumSize: Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: Text(
+                  'Log In',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
+              SizedBox(height: 20),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => SignUpScreen()),
+                    );
+                  },
+                  child: Text(
+                    'Don\'t have an account? Sign Up',
+                    style: TextStyle(color: Color.fromRGBO(252, 181, 8, 1)),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+      backgroundColor: Color(0xFFF5F5F5), // Light background color
     );
   }
 }
