@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../helpers/sqflite_helper.dart';
 import '../firebase_auth.dart';
+import '../widgets/redeem_coupon_modal.dart';
 
 class UniversalRewardsScreen extends StatefulWidget {
   const UniversalRewardsScreen({super.key});
@@ -24,9 +25,9 @@ class _UniversalRewardsScreenState extends State<UniversalRewardsScreen> {
     final user = await _authService.getCurrentUser();
     if (user != null) {
       final coupons = await _dbHelper.getUserCoupons(user.uid);
-      // TODO: Add method to fetch raffle entries when implemented
       setState(() {
-        _userRewards = coupons;
+        _userRewards =
+            List<Map<String, dynamic>>.from(coupons); // Ensure mutable list
       });
     }
   }
@@ -34,6 +35,30 @@ class _UniversalRewardsScreenState extends State<UniversalRewardsScreen> {
   String _formatDate(int millisecondsSinceEpoch) {
     DateTime date = DateTime.fromMillisecondsSinceEpoch(millisecondsSinceEpoch);
     return "${date.month}/${date.day}/${date.year}";
+  }
+
+  // Show modal with coupon details
+  void _showRewardDetails(Map<String, dynamic> reward) {
+    showDialog(
+      context: context,
+      builder: (context) => RedeemCouponModal(
+        reward: reward,
+        onAccept: () async {
+          // Step 1: Delete the coupon from the database
+          await _dbHelper.deleteCoupon(
+              reward['user_id'].toString(), reward['coupon_code'].toString());
+
+          // Step 2: Remove the coupon from the list immediately
+          setState(() {
+            _userRewards
+                .removeWhere((r) => r['coupon_code'] == reward['coupon_code']);
+          });
+
+          // Step 3: Close the modal
+          Navigator.of(context).pop();
+        },
+      ),
+    );
   }
 
   @override
@@ -59,37 +84,11 @@ class _UniversalRewardsScreenState extends State<UniversalRewardsScreen> {
                       'Expires: ${_formatDate(reward['expiration_date'])}'),
                   trailing: ElevatedButton(
                     onPressed: () => _showRewardDetails(reward),
-                    child: Text('View'),
+                    child: Text('Redeem'),
                   ),
                 );
               },
             ),
-    );
-  }
-
-  void _showRewardDetails(Map<String, dynamic> reward) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Reward Details'),
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Type: ${reward['type']}'),
-            if (reward['coupon_code'] != null)
-              Text('Coupon Code: ${reward['coupon_code']}'),
-            Text('Purchased: ${_formatDate(reward['purchase_date'])}'),
-            Text('Expires: ${_formatDate(reward['expiration_date'])}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Close'),
-          ),
-        ],
-      ),
     );
   }
 }

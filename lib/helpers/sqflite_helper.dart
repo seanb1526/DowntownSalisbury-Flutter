@@ -144,6 +144,17 @@ class DatabaseHelper {
     return DateTime.now().millisecondsSinceEpoch.toString().substring(5, 12);
   }
 
+  // Method to delete a coupon
+  Future<void> deleteCoupon(String userId, String couponCode) async {
+    final db = await database;
+    await db.delete(
+      'Coupons', // Table name
+      where:
+          'user_id = ? AND coupon_code = ?', // Assuming user_id and coupon_code are unique
+      whereArgs: [userId, couponCode],
+    );
+  }
+
   // Insert or update user currency
   Future<void> updateCurrency(String userId, int balance) async {
     final db = await database;
