@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io' show Platform;
 import 'package:location/location.dart';
+import './acquired_rewards_screen.dart';
 
 final flutterReactiveBle = FlutterReactiveBle();
 
@@ -166,7 +167,19 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: Icon(Icons.person, size: 24), // Profile icon
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => UniversalRewardsScreen()),
+            );
+          },
+        ),
+
         title: Row(
+          mainAxisAlignment: MainAxisAlignment.center, // Center the title
+          mainAxisSize: MainAxisSize.min, // Ensure it doesn't take excess space
           children: [
             SvgPicture.asset(
               'assets/images/navpro.svg',
@@ -177,7 +190,8 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
             Text('Downtown Game'),
           ],
         ),
-        automaticallyImplyLeading: false,
+        centerTitle: true, // Center the title explicitly
+        automaticallyImplyLeading: false, // Disable default back button
         actions: [
           IconButton(
             icon: Icon(Icons.logout, size: 24),

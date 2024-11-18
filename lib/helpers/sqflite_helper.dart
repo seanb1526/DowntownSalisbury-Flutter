@@ -16,24 +16,31 @@ class DatabaseHelper {
     return _database!;
   }
 
-// Initialize the database
-  _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'user_currency.db');
+  Future<Database> _initDatabase() async {
+    String path = join(await getDatabasesPath(), 'user_rewards.db');
 
-    // Open the database and ensure tables are created if they do not exist
-    var db = await openDatabase(path, readOnly: false);
+    var db = await openDatabase(
+      path,
+      version: 2,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
 
-    // Create the user_currency table if it doesn't exist
+    return db;
+  }
+
+  Future<void> _onCreate(Database db, int version) async {
+    // User Currency Table
     await db.execute('''
-    CREATE TABLE IF NOT EXISTS user_currency(
+    CREATE TABLE user_currency(
       user_id TEXT PRIMARY KEY, 
       currency_balance INTEGER
     )
-  ''');
+    ''');
 
-    // Create the Stores table if it doesn't exist
+    // Stores Table
     await db.execute('''
-    CREATE TABLE IF NOT EXISTS Stores (
+    CREATE TABLE Stores (
       storeID INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id TEXT,
       icon TEXT,
@@ -42,12 +49,99 @@ class DatabaseHelper {
       color TEXT,
       mac TEXT,
       iBKS TEXT,
-      lastSuccessfulScanTime INTEGER DEFAULT 0,  -- Changed to INTEGER for milliseconds
+      lastSuccessfulScanTime INTEGER DEFAULT 0,
       FOREIGN KEY (user_id) REFERENCES user_currency (user_id)
     )
-  ''');
+    ''');
 
-    return db;
+    // Coupons Table
+    await db.execute('''
+    CREATE TABLE Coupons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT,
+      type TEXT,
+      discount_percentage INTEGER,
+      purchase_date INTEGER,
+      expiration_date INTEGER,
+      is_used INTEGER DEFAULT 0,
+      redemption_start_time INTEGER,
+      coupon_code TEXT,
+      FOREIGN KEY (user_id) REFERENCES user_currency (user_id)
+    )
+    ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add coupon table if upgrading from version 1
+      await db.execute('''
+      CREATE TABLE Coupons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT,
+        type TEXT,
+        discount_percentage INTEGER,
+        purchase_date INTEGER,
+        expiration_date INTEGER,
+        is_used INTEGER DEFAULT 0,
+        redemption_start_time INTEGER,
+        coupon_code TEXT,
+        FOREIGN KEY (user_id) REFERENCES user_currency (user_id)
+      )
+      ''');
+    }
+  }
+
+  // Coupon-related methods
+  Future<int> purchaseCoupon(
+      String userId, String type, int discountPercentage) async {
+    final db = await database;
+
+    // Generate a unique coupon code
+    String couponCode = _generateCouponCode();
+
+    // Current timestamp
+    int now = DateTime.now().millisecondsSinceEpoch;
+
+    // Coupon expires in 30 days
+    int expirationDate = now + (30 * 24 * 60 * 60 * 1000);
+
+    return await db.insert('Coupons', {
+      'user_id': userId,
+      'type': type,
+      'discount_percentage': discountPercentage,
+      'purchase_date': now,
+      'expiration_date': expirationDate,
+      'is_used': 0,
+      'coupon_code': couponCode
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getUserCoupons(String userId) async {
+    final db = await database;
+    return await db.query(
+      'Coupons',
+      where: 'user_id = ? AND is_used = 0 AND expiration_date > ?',
+      whereArgs: [userId, DateTime.now().millisecondsSinceEpoch],
+    );
+  }
+
+  Future<bool> redeemCoupon(int couponId) async {
+    final db = await database;
+    int now = DateTime.now().millisecondsSinceEpoch;
+
+    // 3-minute redemption window
+    int redemptionWindow = now + (3 * 60 * 1000);
+
+    int updatedRows = await db.update(
+        'Coupons', {'is_used': 1, 'redemption_start_time': now},
+        where: 'id = ? AND is_used = 0', whereArgs: [couponId]);
+
+    return updatedRows > 0;
+  }
+
+  String _generateCouponCode() {
+    // Simple coupon code generation
+    return DateTime.now().millisecondsSinceEpoch.toString().substring(5, 12);
   }
 
   // Insert or update user currency
@@ -80,36 +174,31 @@ class DatabaseHelper {
     await db.insert(
       'Stores',
       storeData,
-      conflictAlgorithm:
-          ConflictAlgorithm.replace, // Replace if the store already exists
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
   Future<void> clearStores() async {
     final db = await database;
-    await db.delete('stores'); // Clears all rows in the stores table
+    await db.delete('stores');
   }
 
   Future<void> insertOrUpdateStore(Map<String, dynamic> store) async {
     final db = await database;
 
-    // Check if the store exists in the database
     final existingStore = await db.query(
       'Stores',
-      where:
-          'storeID = ?', // Replace 'id' with the actual unique identifier for your stores
-      whereArgs: [store['id']], // Match against the unique store ID
+      where: 'storeID = ?',
+      whereArgs: [store['id']],
     );
 
     if (existingStore.isEmpty) {
-      // Insert a new record if the store does not exist
       await db.insert('stores', store);
     } else {
-      // Update the existing record if the store already exists
       await db.update(
         'stores',
         store,
-        where: 'id = ?', // Update the record that matches the store's ID
+        where: 'id = ?',
         whereArgs: [store['storeID']],
       );
     }
@@ -117,26 +206,22 @@ class DatabaseHelper {
 
   // Fetch store data from Firestore and insert it into SQLite
   Future<void> syncStoresFromFirestore(String userId) async {
-    // Fetch data from Firestore
     final snapshot =
         await FirebaseFirestore.instance.collection('Stores').get();
 
-    // Loop through each document in Firestore and insert it into SQLite
     for (var doc in snapshot.docs) {
       Map<String, dynamic> storeData = {
         'user_id': userId,
-        'storeID': doc.id, // Firestore document ID as storeID
-        'icon': doc['icon'] ?? '', // Default to empty string if no data
+        'storeID': doc.id,
+        'icon': doc['icon'] ?? '',
         'name': doc['name'] ?? '',
-        'isAvailable': doc['isAvailable'] ??
-            'available', // Default to 'true' if not available
+        'isAvailable': doc['isAvailable'] ?? 'available',
         'color': doc['color'] ?? '',
         'mac': doc['mac'] ?? '',
         'iBKS': doc['iBKS'] ?? '',
         'lastSuccessfulScanTime': doc['lastSuccessfulScanTime'] ?? '',
       };
 
-      // Insert the data into SQLite using insertStoreData
       await insertStoreData(storeData);
     }
   }
@@ -144,14 +229,8 @@ class DatabaseHelper {
   // Get all stores
   Future<List<Map<String, dynamic>>> getStores() async {
     final db = await database;
-
-    // Query the database
-    List<Map<String, dynamic>> stores =
-        await db.query('Stores'); // No filtering by user_id needed
-
-    // Print the result to check what is returned
+    List<Map<String, dynamic>> stores = await db.query('Stores');
     print('Stores retrieved: $stores');
-
     return stores;
   }
 
@@ -164,7 +243,7 @@ class DatabaseHelper {
       'stores',
       {
         'isAvailable': availability,
-        'lastSuccessfulScanTime': lastScanTime, // Store the timestamp
+        'lastSuccessfulScanTime': lastScanTime,
       },
       where: 'storeID = ?',
       whereArgs: [storeId],

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../widgets/reward_item.dart'; // Ensure this widget exists in your project
-import '../helpers/sqflite_helper.dart'; // Import your DatabaseHelper
-import '../firebase_auth.dart'; // Import FirebaseAuthService
+import '../widgets/reward_item.dart';
+import '../helpers/sqflite_helper.dart';
+import '../firebase_auth.dart';
 
 class RewardsScreen extends StatefulWidget {
   const RewardsScreen({super.key});
@@ -12,6 +12,7 @@ class RewardsScreen extends StatefulWidget {
 
 class _RewardsScreenState extends State<RewardsScreen> {
   final FirebaseAuthService _authService = FirebaseAuthService();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
   int _coinBalance = 0;
 
   @override
@@ -20,30 +21,39 @@ class _RewardsScreenState extends State<RewardsScreen> {
     _fetchCoinBalance();
   }
 
-  // Fetch the user's current coin balance from the database
   Future<void> _fetchCoinBalance() async {
-    final user = await _authService.getCurrentUser(); // Get the current user
+    final user = await _authService.getCurrentUser();
     if (user != null) {
-      final userId = user.uid; // Get the Firebase user ID
-      final balance = await DatabaseHelper().getCurrency(userId);
+      final balance = await _dbHelper.getCurrency(user.uid);
       setState(() {
-        _coinBalance = balance ?? 0; // Set balance or default to 0 if not found
+        _coinBalance = balance ?? 0;
       });
     }
   }
 
-  // Deduct coins and update the balance
-  Future<void> _redeemReward(String userId, int rewardCost) async {
+  Future<void> _redeemCoupon(String userId, int rewardCost, String type,
+      int discountPercentage) async {
     if (_coinBalance >= rewardCost) {
-      final newBalance = _coinBalance - rewardCost;
-      await DatabaseHelper().updateCurrency(userId, newBalance);
-      setState(() {
-        _coinBalance = newBalance;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Reward redeemed! New balance: $_coinBalance Coins')),
-      );
+      try {
+        // Purchase coupon in database
+        await _dbHelper.purchaseCoupon(userId, type, discountPercentage);
+
+        // Deduct coins
+        final newBalance = _coinBalance - rewardCost;
+        await _dbHelper.updateCurrency(userId, newBalance);
+
+        setState(() {
+          _coinBalance = newBalance;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$type Coupon Purchased!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error purchasing coupon: $e')),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Not enough coins!')),
@@ -65,8 +75,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(
-                context, _coinBalance); // Return the updated coin balance
+            Navigator.pop(context, _coinBalance);
           },
         ),
       ),
@@ -74,11 +83,9 @@ class _RewardsScreenState extends State<RewardsScreen> {
         padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Center the Row containing the icon and balance
             Center(
               child: Row(
-                mainAxisSize: MainAxisSize
-                    .min, // Makes the row only as wide as its content
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(Icons.monetization_on,
                       size: 24, color: Colors.amber[600]),
@@ -97,28 +104,41 @@ class _RewardsScreenState extends State<RewardsScreen> {
                 ),
                 children: [
                   RewardItem(
-                    icon: Icons.gif_box_outlined,
-                    title: '5% Off Coupon',
+                    icon: Icons.local_offer_outlined,
+                    title: '10% Off Coupon',
                     cost: '50 Coins',
                     onRedeem: () async {
                       final user = await _authService.getCurrentUser();
                       if (user != null) {
-                        _redeemReward(user.uid, 50); // Deduct 50 coins
+                        _redeemCoupon(user.uid, 50, '10% Off', 10);
                       }
                     },
                   ),
                   RewardItem(
                     icon: Icons.local_offer_outlined,
-                    title: 'Raffle Ticket',
+                    title: '15% Off Coupon',
+                    cost: '75 Coins',
+                    onRedeem: () async {
+                      final user = await _authService.getCurrentUser();
+                      if (user != null) {
+                        _redeemCoupon(user.uid, 75, '15% Off', 15);
+                      }
+                    },
+                  ),
+                  RewardItem(
+                    icon: Icons.confirmation_number_outlined,
+                    title: 'Raffle Entry',
                     cost: '100 Coins',
                     onRedeem: () async {
                       final user = await _authService.getCurrentUser();
                       if (user != null) {
-                        _redeemReward(user.uid, 100); // Deduct 100 coins
+                        // TODO: Implement raffle entry logic
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Raffle entry coming soon!')),
+                        );
                       }
                     },
                   ),
-                  // Add more RewardItem widgets here as needed
                 ],
               ),
             ),
