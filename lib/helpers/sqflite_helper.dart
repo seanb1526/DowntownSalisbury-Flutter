@@ -63,7 +63,6 @@ class DatabaseHelper {
       discount_percentage INTEGER,
       purchase_date INTEGER,
       expiration_date INTEGER,
-      redemption_start_time INTEGER,
       coupon_code TEXT,
       FOREIGN KEY (user_id) REFERENCES user_currency (user_id)
     )
@@ -81,7 +80,6 @@ class DatabaseHelper {
         discount_percentage INTEGER,
         purchase_date INTEGER,
         expiration_date INTEGER,
-        redemption_start_time INTEGER,
         coupon_code TEXT,
         FOREIGN KEY (user_id) REFERENCES user_currency (user_id)
       )

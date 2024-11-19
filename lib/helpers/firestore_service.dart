@@ -20,4 +20,35 @@ class FirestoreService {
       return [];
     }
   }
+
+  // Save redeemed coupon to Firestore
+  Future<void> saveRedeemedCoupon({
+    required String userId,
+    required String type,
+    required int discountPercentage,
+    required DateTime purchaseDate,
+    required DateTime expirationDate,
+    required String couponCode,
+  }) async {
+    try {
+      // Build the coupon data
+      Map<String, dynamic> couponData = {
+        'user_id': userId,
+        'type': type,
+        'discount_percentage': discountPercentage,
+        'purchase_date': purchaseDate,
+        'expiration_date': expirationDate,
+        'coupon_code': couponCode,
+        'accepted_date':
+            FieldValue.serverTimestamp(), // Firestore server timestamp
+      };
+
+      // Add to RedeemedCoupons collection with auto-ID
+      await _db.collection('RedeemedCoupons').add(couponData);
+
+      print('Redeemed coupon successfully saved to Firestore.');
+    } catch (e) {
+      print('Error saving redeemed coupon: $e');
+    }
+  }
 }

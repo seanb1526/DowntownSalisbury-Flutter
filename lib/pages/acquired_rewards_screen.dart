@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../helpers/sqflite_helper.dart';
 import '../firebase_auth.dart';
 import '../widgets/redeem_coupon_modal.dart';
+import '../helpers/firestore_service.dart';
 
 class UniversalRewardsScreen extends StatefulWidget {
   const UniversalRewardsScreen({super.key});
@@ -44,18 +45,40 @@ class _UniversalRewardsScreenState extends State<UniversalRewardsScreen> {
       builder: (context) => RedeemCouponModal(
         reward: reward,
         onAccept: () async {
-          // Step 1: Delete the coupon from the database
-          await _dbHelper.deleteCoupon(
-              reward['user_id'].toString(), reward['coupon_code'].toString());
+          try {
+            // Step 1: Save the redeemed coupon to Firestore
+            await FirestoreService().saveRedeemedCoupon(
+              userId: reward['user_id'].toString(),
+              type: reward['type'].toString(),
+              discountPercentage:
+                  int.parse(reward['discount_percentage'].toString()),
+              purchaseDate: DateTime.fromMillisecondsSinceEpoch(
+                  int.parse(reward['purchase_date'].toString())),
+              expirationDate: DateTime.fromMillisecondsSinceEpoch(
+                  int.parse(reward['expiration_date'].toString())),
+              couponCode: reward['coupon_code'].toString(),
+            );
 
-          // Step 2: Remove the coupon from the list immediately
-          setState(() {
-            _userRewards
-                .removeWhere((r) => r['coupon_code'] == reward['coupon_code']);
-          });
+            // Step 2: Delete the coupon from the SQLite database
+            await _dbHelper.deleteCoupon(
+                reward['user_id'].toString(), reward['coupon_code'].toString());
 
-          // Step 3: Close the modal
-          Navigator.of(context).pop();
+            // Step 3: Remove the coupon from the list immediately
+            setState(() {
+              _userRewards.removeWhere(
+                  (r) => r['coupon_code'] == reward['coupon_code']);
+            });
+
+            // Step 4: Close the modal
+            Navigator.of(context).pop();
+          } catch (e) {
+            // Handle errors (e.g., Firestore or SQLite write errors)
+            print('Error accepting coupon: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text('Failed to accept coupon. Please try again.')),
+            );
+          }
         },
       ),
     );

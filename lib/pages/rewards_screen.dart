@@ -106,11 +106,11 @@ class _RewardsScreenState extends State<RewardsScreen> {
                   RewardItem(
                     icon: Icons.local_offer_outlined,
                     title: '10% Off Coupon',
-                    cost: '50 Coins',
+                    cost: '10 Coins',
                     onRedeem: () async {
                       final user = await _authService.getCurrentUser();
                       if (user != null) {
-                        _redeemCoupon(user.uid, 50, '10% Off', 10);
+                        _redeemCoupon(user.uid, 10, '10% Off', 10);
                       }
                     },
                   ),
