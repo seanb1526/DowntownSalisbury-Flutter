@@ -63,7 +63,6 @@ class DatabaseHelper {
       discount_percentage INTEGER,
       purchase_date INTEGER,
       expiration_date INTEGER,
-      is_used INTEGER DEFAULT 0,
       redemption_start_time INTEGER,
       coupon_code TEXT,
       FOREIGN KEY (user_id) REFERENCES user_currency (user_id)
@@ -82,7 +81,6 @@ class DatabaseHelper {
         discount_percentage INTEGER,
         purchase_date INTEGER,
         expiration_date INTEGER,
-        is_used INTEGER DEFAULT 0,
         redemption_start_time INTEGER,
         coupon_code TEXT,
         FOREIGN KEY (user_id) REFERENCES user_currency (user_id)
@@ -111,7 +109,6 @@ class DatabaseHelper {
       'discount_percentage': discountPercentage,
       'purchase_date': now,
       'expiration_date': expirationDate,
-      'is_used': 0,
       'coupon_code': couponCode
     });
   }
@@ -120,23 +117,9 @@ class DatabaseHelper {
     final db = await database;
     return await db.query(
       'Coupons',
-      where: 'user_id = ? AND is_used = 0 AND expiration_date > ?',
+      where: 'user_id = ? AND expiration_date > ?',
       whereArgs: [userId, DateTime.now().millisecondsSinceEpoch],
     );
-  }
-
-  Future<bool> redeemCoupon(int couponId) async {
-    final db = await database;
-    int now = DateTime.now().millisecondsSinceEpoch;
-
-    // 3-minute redemption window
-    int redemptionWindow = now + (3 * 60 * 1000);
-
-    int updatedRows = await db.update(
-        'Coupons', {'is_used': 1, 'redemption_start_time': now},
-        where: 'id = ? AND is_used = 0', whereArgs: [couponId]);
-
-    return updatedRows > 0;
   }
 
   String _generateCouponCode() {
