@@ -34,7 +34,7 @@ class RewardItem extends StatelessWidget {
             width:
                 100.0, // Adjust the width of the image (you can change this value)
             height:
-                10.0, // Adjust the height of the image (you can change this value)
+                50.0, // Adjust the height of the image (you can change this value)
           ),
           SizedBox(height: 8),
           Text(
@@ -48,7 +48,6 @@ class RewardItem extends StatelessWidget {
             style: TextStyle(color: Colors.grey),
             textAlign: TextAlign.center, // Center the cost text
           ),
-          SizedBox(height: 8),
           // ElevatedButton with updated style
           ElevatedButton(
             onPressed: onRedeem,
