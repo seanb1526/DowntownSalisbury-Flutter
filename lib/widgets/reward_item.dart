@@ -53,7 +53,8 @@ class RewardItem extends StatelessWidget {
             onPressed: onRedeem,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white, // Button background color
-              foregroundColor: Colors.blue, // Button text color
+              foregroundColor:
+                  const Color.fromARGB(255, 0, 0, 0), // Button text color
             ),
             child: Text('Redeem'),
           ),
