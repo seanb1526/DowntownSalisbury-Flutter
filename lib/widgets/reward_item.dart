@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 class RewardItem extends StatelessWidget {
-  final IconData icon;
+  final String imagePath; // Changed from 'icon' to 'imagePath'
   final String title;
   final String cost;
   final VoidCallback onRedeem;
 
   RewardItem({
-    required this.icon,
+    required this.imagePath, // Accepts the image path as a parameter
     required this.title,
     required this.cost,
     required this.onRedeem,
@@ -18,27 +18,44 @@ class RewardItem extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: const Color.fromARGB(
+            255, 95, 194, 240), // Light blue background color
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment:
+            MainAxisAlignment.center, // Center content vertically
+        crossAxisAlignment:
+            CrossAxisAlignment.center, // Center content horizontally
         children: [
-          Icon(icon, color: Colors.grey),
+          // Replace the Icon with Image.asset
+          Image.asset(
+            imagePath, // Use the imagePath provided
+            width:
+                100.0, // Adjust the width of the image (you can change this value)
+            height:
+                10.0, // Adjust the height of the image (you can change this value)
+          ),
           SizedBox(height: 8),
           Text(
             title,
             style: Theme.of(context).textTheme.titleMedium,
+            textAlign: TextAlign.center, // Center the title text
           ),
           SizedBox(height: 4),
           Text(
             cost,
             style: TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center, // Center the cost text
           ),
           SizedBox(height: 8),
-          Expanded(child: Container()),
+          // ElevatedButton with updated style
           ElevatedButton(
             onPressed: onRedeem,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white, // Button background color
+              foregroundColor: Colors.blue, // Button text color
+            ),
             child: Text('Redeem'),
           ),
         ],

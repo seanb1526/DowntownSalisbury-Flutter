@@ -104,7 +104,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
                 ),
                 children: [
                   RewardItem(
-                    icon: Icons.local_offer_outlined,
+                    imagePath: 'assets/images/10percent_coupon.png',
                     title: '10% Off Coupon',
                     cost: '10 Coins',
                     onRedeem: () async {
@@ -115,7 +115,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
                     },
                   ),
                   RewardItem(
-                    icon: Icons.local_offer_outlined,
+                    imagePath: 'assets/images/15percent_coupon.png',
                     title: '15% Off Coupon',
                     cost: '75 Coins',
                     onRedeem: () async {
@@ -126,7 +126,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
                     },
                   ),
                   RewardItem(
-                    icon: Icons.confirmation_number_outlined,
+                    imagePath: 'assets/images/DT-Giftcard.png',
                     title: 'Raffle Entry',
                     cost: '100 Coins',
                     onRedeem: () async {

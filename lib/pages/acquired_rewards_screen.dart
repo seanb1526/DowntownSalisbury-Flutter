@@ -98,7 +98,7 @@ class _UniversalRewardsScreenState extends State<UniversalRewardsScreen> {
                 final reward = _userRewards[index];
                 return ListTile(
                   leading: Icon(
-                    reward['type'].toString().contains('Coupon')
+                    reward['type'].toString().contains('%')
                         ? Icons.local_offer
                         : Icons.confirmation_number,
                   ),
