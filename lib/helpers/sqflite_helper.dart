@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io' show Platform;
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -254,5 +255,56 @@ class DatabaseHelper {
       where: 'storeID = ?',
       whereArgs: [storeId],
     );
+  }
+
+  Future<Map<String, dynamic>?> getStoreByField(
+      String columnToQuery, String beaconId) async {
+    try {
+      // Use DatabaseHelper to get the database instance
+      final db = await DatabaseHelper().database;
+
+      // Query the 'Stores' table to find the store by the specified column and beaconId
+      final List<Map<String, dynamic>> result = await db.query(
+        'Stores', // The table to query
+        where: '$columnToQuery = ?', // Query the specific column (mac or iBKS)
+        whereArgs: [beaconId], // Use beaconId as the query argument
+      );
+
+      if (result.isNotEmpty) {
+        return result.first; // Return the first result as store data
+      } else {
+        print('No store found for beaconId: $beaconId');
+        return null; // Return null if no store was found
+      }
+    } catch (e) {
+      print('Error querying store by $columnToQuery: $e');
+      return null; // Return null if there was an error
+    }
+  }
+
+  Future<Map<String, dynamic>?> getStoreByBeacon(String beaconId) async {
+    try {
+      // Check the platform using dart:io's Platform class
+      String columnToQuery =
+          ''; // Determine which column to query (mac or iBKS)
+
+      if (Platform.isIOS) {
+        columnToQuery = 'iBKS'; // iOS uses iBKS field
+      } else if (Platform.isAndroid) {
+        columnToQuery = 'mac'; // Android uses mac field
+      } else {
+        print('Unsupported platform');
+        return null; // In case of unsupported platform
+      }
+
+      // Query the database based on the platform-specific column
+      final store =
+          await DatabaseHelper().getStoreByField(columnToQuery, beaconId);
+
+      return store; // Return the store data if found, or null if not
+    } catch (e) {
+      print('Error fetching store by beacon: $e');
+      return null; // Return null in case of an error
+    }
   }
 }

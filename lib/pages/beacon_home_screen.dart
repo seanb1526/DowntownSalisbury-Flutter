@@ -4,6 +4,7 @@ import 'rewards_screen.dart';
 import '../widgets/store_item.dart';
 import '../firebase_auth.dart';
 import '../helpers/sqflite_helper.dart';
+import '../helpers/firestore_service.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'dart:async';
 import 'dart:io';
@@ -23,6 +24,7 @@ class BeaconHomeScreen extends StatefulWidget {
 
 class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
   final FirebaseAuthService _authService = FirebaseAuthService();
+  final FirestoreService _firestoreService = FirestoreService();
   int _coinBalance = 0;
   List<Map<String, dynamic>> _stores =
       []; // List to hold store data from the database
@@ -116,18 +118,40 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
         }
       });
 
+      // Modified beacon scanning code
       scanSubscription = flutterReactiveBle.scanForDevices(
         withServices: [],
       ).listen(
-        (device) {
+        (device) async {
           if (device.id == beaconId) {
             print("Beacon found with UUID: $beaconId");
             if (device.rssi >= proximityThreshold) {
               print("Beacon is within range. Current RSSI: ${device.rssi}");
+
+              // Stop scanning and cancel timers
               scanSubscription?.cancel();
               timeoutTimer?.cancel();
               isScanning = false;
-              completer.complete(true);
+
+              // Fetch userId from Firebase Auth  (Not sure about this user? thing)
+              final user = _authService.getCurrentUser();
+              final userId = user?.uid;
+              if (userId == null) {
+                print("User is not authenticated!");
+                return;
+              }
+
+              // Fetch the storeID from SQLite using the beaconId
+              final storeID = await getStoreIDFromBeacon(beaconId);
+              if (storeID != null) {
+                // Log the successful beacon scan to Firestore
+                await onBeaconDetected(userId, storeID);
+
+                // Complete the completer to indicate success
+                completer.complete(true);
+              } else {
+                print("Beacon ID does not match any store. Skipping check-in.");
+              }
             } else {
               print(
                   "Beacon found, but out of range. Current RSSI: ${device.rssi}");
@@ -146,12 +170,38 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
           timeoutTimer?.cancel();
         },
       );
-    } else {
-      print("A scan is already running.");
-      return false;
     }
-
     return completer.future;
+  }
+
+  // Function to handle Firestore integration when a beacon is detected
+  Future<void> onBeaconDetected(String userId, String storeID) async {
+    try {
+      print(
+          "Beacon detected. Logging check-in for user $userId at store $storeID.");
+      await _firestoreService.addCheckIn(userId: userId, storeID: storeID);
+      print("Check-in logged successfully.");
+    } catch (e) {
+      print("Error logging check-in: $e");
+    }
+  }
+
+  // Function to find storeID from SQLite table
+  Future<String?> getStoreIDFromBeacon(String beaconId) async {
+    try {
+      // Query SQLite to find the store where mac or iBKS matches the beaconId
+      final result = await DatabaseHelper().getStoreByBeacon(beaconId);
+
+      if (result != null && result.isNotEmpty) {
+        return result['storeID'].toString(); // Assuming storeID is an integer
+      } else {
+        print("No store found for beaconId: $beaconId");
+        return null;
+      }
+    } catch (e) {
+      print("Error fetching storeID from SQLite: $e");
+      return null;
+    }
   }
 
   @override

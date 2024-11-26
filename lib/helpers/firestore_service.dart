@@ -79,4 +79,38 @@ class FirestoreService {
       print('Error initializing user in Firestore: $e');
     }
   }
+
+  // Add a new check-in to the daily activity
+  Future<void> addCheckIn({
+    required String userId,
+    required String storeID,
+  }) async {
+    try {
+      // Get today's date in YYYY-MM-DD format
+      final now = DateTime.now();
+      final String date =
+          "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+
+      // Reference to the daily activity document
+      DocumentReference dailyActivityRef = _db
+          .collection('Users')
+          .doc(userId)
+          .collection('daily_activity')
+          .doc(date);
+
+      // Ensure the daily activity document exists
+      await dailyActivityRef.set({'date': date}, SetOptions(merge: true));
+
+      // Add a new check-in to the `checkins` subcollection
+      await dailyActivityRef.collection('checkins').add({
+        'time': FieldValue.serverTimestamp(),
+        'storeID': storeID,
+        'user_id': userId,
+      });
+
+      print('Check-in added successfully for user $userId on $date.');
+    } catch (e) {
+      print('Error adding check-in: $e');
+    }
+  }
 }
