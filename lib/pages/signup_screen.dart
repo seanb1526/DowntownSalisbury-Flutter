@@ -27,9 +27,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (user != null) {
         String userId = user.uid;
 
+        // Initialize user's in-app currency balance in local database
         await DatabaseHelper().updateCurrency(userId, 0);
-        await DatabaseHelper().clearStores();
 
+        // Clear and populate local stores database with data from Firestore
+        await DatabaseHelper().clearStores();
         List<Map<String, dynamic>> storesData =
             await _firestoreService.getStoresData();
 
@@ -38,8 +40,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
           await DatabaseHelper().insertOrUpdateStore(store);
         }
 
+        // Initialize the user in Firestore
+        await _firestoreService.initializeUser(userId, user.email!);
+
         print("Sign up successful: ${user.email}");
 
+        // Navigate to the main screen after successful sign-up
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(

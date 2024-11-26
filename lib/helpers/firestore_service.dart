@@ -51,4 +51,32 @@ class FirestoreService {
       print('Error saving redeemed coupon: $e');
     }
   }
+
+  // Initialize a new user in Firestore
+  Future<void> initializeUser(String userId, String email) async {
+    try {
+      // Check if the user already exists to avoid overwriting data
+      DocumentSnapshot userDoc =
+          await _db.collection('Users').doc(userId).get();
+      if (userDoc.exists) {
+        print('User already exists in Firestore.');
+        return;
+      }
+
+      // Build the user data
+      Map<String, dynamic> userData = {
+        'email': email,
+        'created_at':
+            FieldValue.serverTimestamp(), // Firestore server timestamp
+        'daily_activity': {}, // Placeholder for user's daily activity
+      };
+
+      // Save user to Firestore
+      await _db.collection('Users').doc(userId).set(userData);
+
+      print('New user initialized in Firestore.');
+    } catch (e) {
+      print('Error initializing user in Firestore: $e');
+    }
+  }
 }
