@@ -18,7 +18,7 @@ class RewardItem extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: const Color.fromARGB(
-            255, 95, 194, 240), // Light blue background color
+            255, 136, 207, 240), // Light blue background color
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -38,15 +38,18 @@ class RewardItem extends StatelessWidget {
           SizedBox(height: 8),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold, // Makes the text bold
+                ),
             textAlign: TextAlign.center, // Center the title text
           ),
           SizedBox(height: 4),
           Text(
             cost,
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
             textAlign: TextAlign.center, // Center the cost text
           ),
+          SizedBox(height: 4),
           // ElevatedButton with updated style
           ElevatedButton(
             onPressed: onRedeem,
@@ -54,9 +57,10 @@ class RewardItem extends StatelessWidget {
               backgroundColor: Colors.white, // Button background color
               foregroundColor:
                   const Color.fromARGB(255, 0, 0, 0), // Button text color
+              elevation: 10, // Add elevation to create a shadow
             ),
             child: Text('Redeem'),
-          ),
+          )
         ],
       ),
     );
