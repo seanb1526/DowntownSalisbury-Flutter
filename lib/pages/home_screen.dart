@@ -122,6 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  mainAxisExtent: 100,
                   crossAxisCount: 3, // 3 items per row
                   childAspectRatio: 1, // Make the buttons square
                   crossAxisSpacing: 20, // Horizontal spacing between buttons
@@ -142,7 +143,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 80, // Circle diameter
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: const Color(0xFF448AFF), // Button background color
+                            color: const Color(
+                                0xFF448AFF), // Button background color
                           ),
                           child: Icon(
                             buttons[index]['icon'], // Icon inside the button

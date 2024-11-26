@@ -16,7 +16,6 @@ class RewardItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color.fromARGB(
             255, 95, 194, 240), // Light blue background color
@@ -34,7 +33,7 @@ class RewardItem extends StatelessWidget {
             width:
                 100.0, // Adjust the width of the image (you can change this value)
             height:
-                50.0, // Adjust the height of the image (you can change this value)
+                60.0, // Adjust the height of the image (you can change this value)
           ),
           SizedBox(height: 8),
           Text(

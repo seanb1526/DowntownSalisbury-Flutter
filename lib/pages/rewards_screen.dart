@@ -99,6 +99,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
               child: GridView(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
+                  mainAxisExtent: 180,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
                 ),
