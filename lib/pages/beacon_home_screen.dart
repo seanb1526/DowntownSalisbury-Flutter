@@ -35,6 +35,8 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     _fetchCoinBalance();
     _fetchStores();
     requestPermissions();
+    // Check and update store availability when the page is loaded
+    checkAndUpdateStoreAvailability();
   }
 
   Future<void> _fetchCoinBalance() async {
@@ -56,6 +58,8 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     final fetchedStores = await DatabaseHelper().getStores(); // Fetch new data
     setState(() {
       _stores = fetchedStores;
+      // After fetching stores, check and update availability
+      checkAndUpdateStoreAvailability();
     });
   }
 
@@ -204,6 +208,86 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     }
   }
 
+  // Cooldown check
+  bool isInCooldown(int lastSuccessfulScanTime, int cooldownTime) {
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+    final remainingTime = (lastSuccessfulScanTime + cooldownTime) - currentTime;
+    if (remainingTime > 0) {
+      final remainingMinutes = remainingTime ~/ 60000;
+      final remainingSeconds = (remainingTime % 60000) ~/ 1000;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              "This beacon is cooling down. Next available in $remainingMinutes:$remainingSeconds"),
+        ),
+      );
+      print("Cooldown: $remainingMinutes:$remainingSeconds remaining.");
+      return true;
+    }
+    return false;
+  }
+
+  // Scan for beacon
+  Future<bool> scanBeacon(String mac, String iBKS) async {
+    if (Platform.isAndroid) {
+      print("Search using MAC Address");
+      return await scanForBeacon(mac);
+    } else if (Platform.isIOS) {
+      print("Search using ID");
+      return await scanForBeacon(iBKS);
+    }
+    return false;
+  }
+
+  Future<void> handleSuccessfulScan(int storeID, int currentTime) async {
+    await _addCoins(10); // Add coins
+    await updateStore(storeID, 'unavailable',
+        currentTime); // Update store to unavailable during cooldown
+
+    // After handling scan, check and update store availability
+    checkAndUpdateStoreAvailability();
+  }
+
+  Future<void> updateStore(
+      int storeID, String availability, int lastScanTime) async {
+    await DatabaseHelper()
+        .updateStoreAvailability(storeID, availability, lastScanTime);
+    setState(() {
+      _stores = _stores.map((item) {
+        if (item['storeID'] == storeID) {
+          return {
+            ...item,
+            'isAvailable': availability,
+            'lastSuccessfulScanTime': lastScanTime,
+          };
+        }
+        return item;
+      }).toList();
+    });
+  }
+
+  // Cooldown check and availability update
+  Future<void> checkAndUpdateStoreAvailability() async {
+    final currentTime = DateTime.now().millisecondsSinceEpoch;
+    final cooldownTime = 2 * 60 * 1000; // 2 minutes in milliseconds
+
+    // Loop through all stores and update availability based on cooldown
+    setState(() {
+      _stores = _stores.map((store) {
+        final lastSuccessfulScanTime = store['lastSuccessfulScanTime'] ?? 0;
+
+        // If the cooldown is finished, set the store as available
+        if (!isInCooldown(lastSuccessfulScanTime, cooldownTime)) {
+          return {
+            ...store,
+            'isAvailable': 'available', // Reset availability after cooldown
+          };
+        }
+        return store;
+      }).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Color> storeItemColors = [
@@ -280,139 +364,30 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                     mac: store['mac'],
                     iBKS: store['iBKS'],
                     onCheckIn: () async {
-                      // Get the current time (in milliseconds)
                       final currentTime = DateTime.now().millisecondsSinceEpoch;
+                      final cooldownTime =
+                          2 * 60 * 1000; // 2 minutes in milliseconds
 
-                      // Get the store's last successful scan time from the database
-                      final lastSuccessfulScanTime =
-                          store['lastSuccessfulScanTime'];
+                      // If in cooldown, prevent the check-in from happening
+                      if (isInCooldown(
+                          store['lastSuccessfulScanTime'], cooldownTime)) {
+                        return;
+                      }
 
-                      // Define the cooldown time (2 minutes in milliseconds)
-                      final cooldownTime = 2 * 60 * 1000; // 2 minutes
-
-                      // Calculate the remaining cooldown time
-                      final remainingTime =
-                          (lastSuccessfulScanTime + cooldownTime) - currentTime;
-                      print(remainingTime);
-
-                      if (remainingTime > 0) {
-                        // If there's remaining cooldown time, show a message with the remaining time
-                        final remainingMinutes = remainingTime ~/ 60000;
-                        final remainingSeconds =
-                            (remainingTime % 60000) ~/ 1000;
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                                "This beacon is cooling down. Next available in $remainingMinutes:$remainingSeconds"),
-                          ),
-                        );
-                        print(
-                            "Store is cooling down. Remaining: $remainingMinutes:$remainingSeconds");
-                      } else {
-                        // If the cooldown is over, allow the scan and update the availability
-                        // Update store availability after successful scan
-                        String newAvailability = 'available';
-                        await DatabaseHelper().updateStoreAvailability(
-                          store['storeID'],
-                          newAvailability,
-                          0,
-                        );
-                        // Update the store data in the list
-                        setState(() {
-                          _stores = _stores.map((item) {
-                            if (item['storeID'] == store['storeID']) {
-                              return {
-                                ...item,
-                                'isAvailable':
-                                    newAvailability, // Change the availability in the store data
-                                'lastSuccessfulScanTime':
-                                    0, // Store the last successful scan time
-                              };
-                            }
-                            return item;
-                          }).toList(); // Rebuild the stores list with updated availability
-                        });
-                        if (store['isAvailable'] == 'available') {
-                          if (Platform.isAndroid) {
-                            print("Search using MAC Address");
-                            bool isFound = await scanForBeacon(store['mac']);
-
-                            if (isFound) {
-                              _addCoins(10); // Add coins if beacon is found
-
-                              // Update store availability after successful scan
-                              String newAvailability =
-                                  'unavailable'; // Mark as unavailable after successful scan
-                              await DatabaseHelper().updateStoreAvailability(
-                                store['storeID'],
-                                newAvailability,
-                                currentTime, // Pass the current timestamp as last scan time
-                              );
-
-                              // Update the store data in the list
-                              setState(() {
-                                _stores = _stores.map((item) {
-                                  if (item['storeID'] == store['storeID']) {
-                                    return {
-                                      ...item,
-                                      'isAvailable':
-                                          newAvailability, // Change the availability in the store data
-                                      'lastSuccessfulScanTime':
-                                          currentTime, // Store the last successful scan time
-                                    };
-                                  }
-                                  return item;
-                                }).toList(); // Rebuild the stores list with updated availability
-                              });
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(
-                                        "Store is unavailable, cannot scan.")),
-                              );
-                              print("Scan for beacon returned false");
-                            }
-                          } else if (Platform.isIOS) {
-                            print("Search using ID");
-                            bool isFound = await scanForBeacon(store['iBKS']);
-
-                            if (isFound) {
-                              _addCoins(10); // Add coins if beacon is found
-
-                              // Update store availability after successful scan
-                              String newAvailability =
-                                  'unavailable'; // Mark as unavailable after successful scan
-                              await DatabaseHelper().updateStoreAvailability(
-                                store['storeID'],
-                                newAvailability,
-                                currentTime, // Pass the current timestamp as last scan time
-                              );
-
-                              // Update the store data in the list
-                              setState(() {
-                                _stores = _stores.map((item) {
-                                  if (item['storeID'] == store['storeID']) {
-                                    return {
-                                      ...item,
-                                      'isAvailable':
-                                          newAvailability, // Change the availability in the store data
-                                      'lastSuccessfulScanTime':
-                                          currentTime, // Store the last successful scan time
-                                    };
-                                  }
-                                  return item;
-                                }).toList(); // Rebuild the stores list with updated availability
-                              });
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content: Text(
-                                        "Store is unavailable, cannot scan.")),
-                              );
-                              print("Scan for beacon returned false");
-                            }
-                          }
+                      // If the store is available, proceed with the scan
+                      if (store['isAvailable'] == 'available') {
+                        final isFound =
+                            await scanBeacon(store['mac'], store['iBKS']);
+                        if (isFound) {
+                          await handleSuccessfulScan(
+                              store['storeID'], currentTime);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content:
+                                    Text("Store is unavailable, cannot scan.")),
+                          );
+                          print("Scan for beacon returned false");
                         }
                       }
                     },
