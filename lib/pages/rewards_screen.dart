@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/reward_item.dart';
 import '../helpers/sqflite_helper.dart';
 import '../firebase_auth.dart';
+import '../helpers/firestore_service.dart';
 
 class RewardsScreen extends StatefulWidget {
   const RewardsScreen({super.key});
@@ -129,14 +130,50 @@ class _RewardsScreenState extends State<RewardsScreen> {
                   RewardItem(
                     imagePath: 'assets/images/DT-Giftcard.png',
                     title: 'Raffle Entry',
-                    cost: '100 Coins',
+                    cost: '10 Coins',
                     onRedeem: () async {
                       final user = await _authService.getCurrentUser();
                       if (user != null) {
-                        // TODO: Implement raffle entry logic
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Raffle entry coming soon!')),
-                        );
+                        if (_coinBalance >= 10) {
+                          // Check if user has enough coins
+                          try {
+                            // Deduct coins
+                            final newBalance = _coinBalance - 10;
+                            await _dbHelper.updateCurrency(
+                                user.uid, newBalance);
+
+                            setState(() {
+                              _coinBalance = newBalance;
+                            });
+
+                            // Add raffle entry to Firestore
+                            await FirestoreService()
+                                .addRaffleEntryToFirestore(user.uid);
+
+                            // Safely handle null email, providing an empty string if it's null
+                            final email = user.email ??
+                                ''; // Default to an empty string if null
+
+                            // Add raffle entry to the local SQLite table
+                            await _dbHelper.purchaseRaffleEntry(
+                                user.uid, email);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Raffle entry purchased!')),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      'Error purchasing raffle entry: $e')),
+                            );
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Not enough coins!')),
+                          );
+                        }
                       }
                     },
                   ),

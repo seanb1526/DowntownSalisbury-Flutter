@@ -55,6 +55,17 @@ class DatabaseHelper {
     )
     ''');
 
+    // Raffles Table
+    await db.execute('''
+    CREATE TABLE Raffles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT,
+      email TEXT, 
+      purchase_date INTEGER,
+      FOREIGN KEY (user_id) REFERENCES user_currency (user_id) 
+    )
+    ''');
+
     // Coupons Table
     await db.execute('''
     CREATE TABLE Coupons (
@@ -111,6 +122,23 @@ class DatabaseHelper {
       'coupon_code': couponCode
     });
   }
+
+  // Raffle-related methods
+  Future<int> purchaseRaffleEntry(String userId, String email) async {
+    final db = await database;
+
+    // Current timestamp
+    int now = DateTime.now().millisecondsSinceEpoch;
+
+    // Insert a new raffle entry into the local Raffles table
+    return await db.insert('Raffles', {
+      'user_id': userId,
+      'email': email,
+      'purchase_date': now,
+    });
+  }
+
+  // GET USERS RAFFLE ENTRIES
 
   Future<List<Map<String, dynamic>>> getUserCoupons(String userId) async {
     final db = await database;

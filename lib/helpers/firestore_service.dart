@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // To format the month-year
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -49,6 +50,28 @@ class FirestoreService {
       print('Redeemed coupon successfully saved to Firestore.');
     } catch (e) {
       print('Error saving redeemed coupon: $e');
+    }
+  }
+
+  Future<void> addRaffleEntryToFirestore(String userId) async {
+    try {
+      // Get the current date and format it as "month-year"
+      final now = DateTime.now();
+      final monthYear = DateFormat('MM-yyyy').format(now); // e.g., "12-2024"
+
+      // Reference to the Firestore collection and document
+      final raffleRef = FirebaseFirestore.instance
+          .collection('Raffles')
+          .doc(monthYear) // Document for the current month-year
+          .collection('entries'); // Subcollection for raffle entries
+
+      // Add the raffle entry to the subcollection
+      await raffleRef.add({
+        'user_id': userId,
+        'purchase_date': FieldValue.serverTimestamp(), // Server timestamp
+      });
+    } catch (e) {
+      throw Exception("Error adding raffle entry to Firestore: $e");
     }
   }
 
