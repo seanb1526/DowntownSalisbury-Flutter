@@ -337,7 +337,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
         ],
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -355,43 +355,48 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                   final store = _stores[index];
                   final color = storeItemColors[index % storeItemColors.length];
 
-                  return StoreItem(
-                    icon: Icons.map_outlined,
-                    name: store['name'],
-                    isAvailable: store['isAvailable'] == 'available'
-                        ? 'available'
-                        : 'unavailable',
-                    mac: store['mac'],
-                    iBKS: store['iBKS'],
-                    onCheckIn: () async {
-                      final currentTime = DateTime.now().millisecondsSinceEpoch;
-                      final cooldownTime =
-                          2 * 60 * 1000; // 2 minutes in milliseconds
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8.0), // Add vertical space
+                    child: StoreItem(
+                      icon: Icons.store,
+                      name: store['name'],
+                      isAvailable: store['isAvailable'] == 'available'
+                          ? 'available'
+                          : 'unavailable',
+                      mac: store['mac'],
+                      iBKS: store['iBKS'],
+                      onCheckIn: () async {
+                        final currentTime =
+                            DateTime.now().millisecondsSinceEpoch;
+                        final cooldownTime =
+                            2 * 60 * 1000; // 2 minutes in milliseconds
 
-                      // If in cooldown, prevent the check-in from happening
-                      if (isInCooldown(
-                          store['lastSuccessfulScanTime'], cooldownTime)) {
-                        return;
-                      }
-
-                      // If the store is available, proceed with the scan
-                      if (store['isAvailable'] == 'available') {
-                        final isFound =
-                            await scanBeacon(store['mac'], store['iBKS']);
-                        if (isFound) {
-                          await handleSuccessfulScan(
-                              store['storeID'], currentTime);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content:
-                                    Text("Store is unavailable, cannot scan.")),
-                          );
-                          print("Scan for beacon returned false");
+                        // If in cooldown, prevent the check-in from happening
+                        if (isInCooldown(
+                            store['lastSuccessfulScanTime'], cooldownTime)) {
+                          return;
                         }
-                      }
-                    },
-                    color: color,
+
+                        // If the store is available, proceed with the scan
+                        if (store['isAvailable'] == 'available') {
+                          final isFound =
+                              await scanBeacon(store['mac'], store['iBKS']);
+                          if (isFound) {
+                            await handleSuccessfulScan(
+                                store['storeID'], currentTime);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      "Store is unavailable, cannot scan.")),
+                            );
+                            print("Scan for beacon returned false");
+                          }
+                        }
+                      },
+                      color: color,
+                    ),
                   );
                 },
               ),

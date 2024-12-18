@@ -5,18 +5,20 @@ class StoreItem extends StatelessWidget {
   final String name;
   final String isAvailable;
   final VoidCallback onCheckIn;
-  final Color color; // Add this line
+  final Color color;
   final String mac; // store mac address of beacon for android
   final String iBKS; // store iBKS id for iOS
+  final double iconSize; // Add this line
 
   StoreItem({
     required this.icon,
     required this.name,
     required this.isAvailable,
     required this.onCheckIn,
-    required this.color, // Update this line
+    required this.color,
     required this.mac,
     required this.iBKS,
+    this.iconSize = 36.0, // Add this line with a default size
   });
 
   @override
@@ -24,12 +26,15 @@ class StoreItem extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color, // Use the color parameter
-        borderRadius: BorderRadius.circular(8),
+        color: color,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          Icon(icon),
+          Icon(
+            icon,
+            size: iconSize, // Use the iconSize parameter
+          ),
           SizedBox(width: 16),
           Expanded(
             child: Column(
