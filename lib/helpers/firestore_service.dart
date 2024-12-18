@@ -11,9 +11,12 @@ class FirestoreService {
       QuerySnapshot querySnapshot = await _db.collection('Stores').get();
 
       // Convert Firestore documents into a list of Map data
-      List<Map<String, dynamic>> storeList = querySnapshot.docs
-          .map((doc) => doc.data() as Map<String, dynamic>)
-          .toList();
+      List<Map<String, dynamic>> storeList = querySnapshot.docs.map((doc) {
+        // Include the Firestore document ID as 'storeID'
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        data['storeID'] = doc.id; // Add the document ID
+        return data;
+      }).toList();
 
       return storeList;
     } catch (e) {

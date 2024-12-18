@@ -17,6 +17,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final FirestoreService _firestoreService = FirestoreService();
 
+  /* This is the function called for sign up click. We will add to this:
+      - Navigation to Onboarding
+      - maybe the initialization of completedOnboarding field (local and/or cloud)
+   */
   Future<void> _signUp() async {
     try {
       final user = await _authService.signUp(

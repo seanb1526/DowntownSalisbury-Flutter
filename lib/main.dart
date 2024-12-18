@@ -65,6 +65,11 @@ class _MainScreenState extends State<MainScreen> {
     _selectedIndex = widget.initialIndex; // Set the selected index
   }
 
+  /* This is the navigation logic for the Beacon Home screen, checking to make sure
+   that the user is logged in. If they are not, we navigate to the LoginScreen.
+
+   We need to add onto this to do the Onboarding process 
+   */
   void _onItemTapped(int index) async {
     if (index == 3) {
       // Beacon Home
