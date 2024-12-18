@@ -225,28 +225,6 @@ class DatabaseHelper {
     }
   }
 
-  // Fetch store data from Firestore and insert it into SQLite
-  Future<void> syncStoresFromFirestore(String userId) async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('Stores').get();
-
-    for (var doc in snapshot.docs) {
-      Map<String, dynamic> storeData = {
-        'user_id': userId,
-        'storeID': doc.id,
-        'icon': doc['icon'] ?? '',
-        'name': doc['name'] ?? '',
-        'isAvailable': doc['isAvailable'] ?? 'available',
-        'color': doc['color'] ?? '',
-        'mac': doc['mac'] ?? '',
-        'iBKS': doc['iBKS'] ?? '',
-        'lastSuccessfulScanTime': doc['lastSuccessfulScanTime'] ?? '',
-      };
-
-      await insertStoreData(storeData);
-    }
-  }
-
   // Get all stores
   Future<List<Map<String, dynamic>>> getStores() async {
     final db = await database;
