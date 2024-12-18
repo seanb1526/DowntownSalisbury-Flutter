@@ -48,6 +48,7 @@ dependencies:
   location: ^7.0.1
   cloud_firestore: ^5.5.0
   intl: ^0.20.1
+  smooth_page_indicator: ^1.2.0+3
 
 dev_dependencies:
   flutter_test:
