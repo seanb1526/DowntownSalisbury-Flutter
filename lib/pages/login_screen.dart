@@ -6,6 +6,8 @@ import 'package:downtown_salisbury/main.dart'; // MainScreen
 import '../helpers/sqflite_helper.dart'; // DatabaseHelper
 import '../helpers/firestore_service.dart'; // FirestoreService
 
+import 'onboarding_screen.dart'; // We can remove this once we finish desiging the onboarding pages
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -47,10 +49,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
         print("Login successful: ${user.email}");
 
-        Navigator.pushReplacement(
+        /* This is the original for the code underneath. It needs to go back once we finish onboarding pages
+                Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => MainScreen(initialIndex: 3),
+          ),
+        );
+        */
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OnboardingScreen(),
           ),
         );
       } else {
