@@ -54,7 +54,7 @@ class StoreItem extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: onCheckIn,
-            child: Text('Check In'),
+            child: Text('Pulse', style: TextStyle(color: Colors.black)),
           ),
         ],
       ),

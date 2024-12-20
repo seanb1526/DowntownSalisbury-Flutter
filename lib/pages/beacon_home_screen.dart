@@ -302,7 +302,7 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.person, size: 24), // Profile icon
+          icon: Icon(Icons.person, size: 30), // Profile icon
           onPressed: () {
             Navigator.push(
               context,
@@ -315,20 +315,18 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center, // Center the title
           mainAxisSize: MainAxisSize.min, // Ensure it doesn't take excess space
           children: [
-            SvgPicture.asset(
-              'assets/images/navpro.svg',
-              height: 24,
-              width: 24,
+            Image.asset(
+              'assets/images/navpulse.png', // Use navpulse.png instead of navpro.svg
+              height: 120, // Set the height for the image
+              width: 120, // Set the width for the image
             ),
-            SizedBox(width: 8),
-            Text('Downtown Game'),
           ],
         ),
         centerTitle: true, // Center the title explicitly
         automaticallyImplyLeading: false, // Disable default back button
         actions: [
           IconButton(
-            icon: Icon(Icons.logout, size: 24),
+            icon: Icon(Icons.logout, size: 30),
             onPressed: () async {
               await _authService.logOut();
               Navigator.pushReplacementNamed(context, '/');
@@ -341,12 +339,6 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Text(
-                'Participating Stores',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
             SizedBox(height: 16),
             Expanded(
               child: ListView.builder(
@@ -426,7 +418,8 @@ class _BeaconHomeScreenState extends State<BeaconHomeScreen> {
                       });
                     }
                   },
-                  child: Text('Spend Coins'),
+                  child: Text('Spend Coins',
+                      style: TextStyle(color: Colors.black)),
                 ),
               ],
             ),

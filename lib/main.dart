@@ -98,12 +98,12 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
           BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.local_activity), label: 'NavPulse'),
+          BottomNavigationBarItem(icon: Icon(Icons.sensors), label: 'NavPulse'),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
+        selectedItemColor: Color(0xFF448AFF),
       ),
     );
   }
