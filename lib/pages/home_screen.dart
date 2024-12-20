@@ -1,8 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart'; // Import url_launcher
+import 'package:firebase_messaging/firebase_messaging.dart'; // Import Firebase Messaging
+import 'package:permission_handler/permission_handler.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _requestLocationPermission();
+    _requestNotificationPermission();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    // Request always permission first as a test
+    await Permission.locationAlways.request();
+    // Now request "when in use" permission
+    var status = await Permission.locationWhenInUse.request();
+    if (status.isGranted) {
+      print("Location permission granted.");
+    } else {
+      print("Location permission denied.");
+    }
+  }
+
+  // Method to request notification permissions
+  Future<void> _requestNotificationPermission() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print('User granted permission');
+    } else if (settings.authorizationStatus ==
+        AuthorizationStatus.provisional) {
+      print('User granted provisional permission');
+    } else {
+      print('User declined or has not accepted permission');
+    }
+  }
 
   // Method to open a URL
   Future<void> _launchURL(String url) async {
@@ -53,58 +102,64 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: [
-          // Header Image with Padding and Proper Sizing
+          // Main Content (Image and Grid)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: SizedBox(
               width: double.infinity,
-              height: 200, // Adjust the height as needed
+              height: 200,
               child: Image.asset(
                 'assets/images/DownTownSalisbury.png',
-                fit: BoxFit.contain, // Makes sure the image fits within bounds
+                fit: BoxFit.contain,
               ),
             ),
           ),
-          // Spacer to provide some gap between the image and the grid
           const SizedBox(height: 20),
-          // Grid of circular buttons
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3, // 3 items per row
-                  childAspectRatio: 1, // Make the buttons square
-                  crossAxisSpacing: 20, // Horizontal spacing between buttons
-                  mainAxisSpacing: 20, // Vertical spacing between buttons
+                  mainAxisExtent: 100,
+                  crossAxisCount: 3,
+                  childAspectRatio: 1,
+                  crossAxisSpacing: 20,
+                  mainAxisSpacing: 20,
                 ),
                 itemCount: buttons.length,
                 itemBuilder: (context, index) {
                   return Column(
                     children: [
-                      // Circular button with icon
                       InkWell(
                         onTap: () {
-                          // Open the URL when the button is tapped
-                          _launchURL(buttons[index]['url']);
+                          final action = buttons[index]['action'];
+                          if (action == 'licenses') {
+                            showLicensePage(
+                              context: context,
+                              applicationName: 'Your App Name',
+                              applicationVersion: '1.0.0',
+                              applicationLegalese: '© 2024 Your Company Name',
+                            );
+                          } else {
+                            _launchURL(buttons[index]['url']);
+                          }
                         },
                         child: Container(
-                          width: 80, // Circle diameter
-                          height: 80, // Circle diameter
+                          width: 80,
+                          height: 80,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.blueAccent, // Button background color
+                            color: const Color(0xFF448AFF),
                           ),
                           child: Icon(
-                            buttons[index]['icon'], // Icon inside the button
+                            buttons[index]['icon'],
                             size: 40,
-                            color: Colors.white, // Icon color
+                            color: Colors.white,
                           ),
                         ),
                       ),
-                      // Label below the button
                       Text(
-                        buttons[index]['label'], // Button label
+                        buttons[index]['label'],
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -114,6 +169,35 @@ class HomeScreen extends StatelessWidget {
                   );
                 },
               ),
+            ),
+          ),
+          // Row above the bottom navigation bar
+          Container(
+            color: Colors.grey[200], // Background color for the row
+            padding:
+                const EdgeInsets.symmetric(vertical: 4.0, horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment:
+                  MainAxisAlignment.end, // Align to the far right
+              children: [
+                TextButton(
+                  onPressed: () {
+                    showLicensePage(
+                      context: context,
+                      applicationName: 'Downtown Salisbury NavScan',
+                      applicationVersion: '1.0.0',
+                      applicationLegalese: '© 2024 IndoorNav Pro LLC',
+                    );
+                  },
+                  child: const Text(
+                    'Licenses',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

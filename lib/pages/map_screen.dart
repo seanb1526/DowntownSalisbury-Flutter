@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 class MapScreen extends StatefulWidget {
@@ -33,7 +32,6 @@ class _MapScreenState extends State<MapScreen> {
     } else if (status.isPermanentlyDenied) {
       print(
           "Location permission permanently denied. Please enable it in settings.");
-      openAppSettings();
     }
   }
 
