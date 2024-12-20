@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 class TermsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    double buttonWidth = MediaQuery.of(context).size.width *
+        0.8; // 80% of screen width for the buttons
+
     return Scaffold(
       backgroundColor: Colors.white, // Set the background color to white
       body: Column(
@@ -46,45 +49,57 @@ class TermsPage extends StatelessWidget {
               // Privacy Policy Button
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Action for Privacy Policy
-                  },
-                  child: Text("Privacy Policy"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF732E99), // Button color
-                    foregroundColor: Colors.white, // Text color
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                child: SizedBox(
+                  width: buttonWidth, // Set the width of the button
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Action for Privacy Policy
+                    },
+                    child: Text("Privacy Policy"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF732E99), // Button color
+                      foregroundColor: Colors.white, // Text color
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    ),
                   ),
                 ),
               ),
               // Terms of Service Button
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Action for Terms of Service
-                  },
-                  child: Text("Terms of Service"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF732E99), // Button color
-                    foregroundColor: Colors.white, // Text color
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                child: SizedBox(
+                  width: buttonWidth, // Set the width of the button
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Action for Terms of Service
+                    },
+                    child: Text("Terms of Service"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF732E99), // Button color
+                      foregroundColor: Colors.white, // Text color
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    ),
                   ),
                 ),
               ),
               // Code of Conduct Button
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Action for Code of Conduct
-                  },
-                  child: Text("Code of Conduct"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF732E99), // Button color
-                    foregroundColor: Colors.white, // Text color
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                child: SizedBox(
+                  width: buttonWidth, // Set the width of the button
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Action for Code of Conduct
+                    },
+                    child: Text("Code of Conduct"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF732E99), // Button color
+                      foregroundColor: Colors.white, // Text color
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    ),
                   ),
                 ),
               ),
