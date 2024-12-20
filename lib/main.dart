@@ -99,7 +99,7 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
           BottomNavigationBarItem(icon: Icon(Icons.event), label: 'Events'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.local_activity), label: 'Beacons'),
+              icon: Icon(Icons.local_activity), label: 'NavPulse'),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
